@@ -1,0 +1,13 @@
+# depslib dependency file v1.0
+1587772437 source:/home/breno/Downloads/SO/ping-pong/p00_CB/testafila.c
+	<stdio.h>
+	<stdlib.h>
+	<assert.h>
+	"queue.h"
+
+1440409443 /home/breno/Downloads/SO/ping-pong/p00_CB/queue.h
+
+1587770960 source:/home/breno/Downloads/SO/ping-pong/p00_CB/queue.c
+	"queue.h"
+	<stdio.h>
+
