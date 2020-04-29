@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1440409486 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p01_CB/contexts.c
+	<stdio.h>
+	<stdlib.h>
+	<ucontext.h>
+

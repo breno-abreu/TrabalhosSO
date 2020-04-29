@@ -1,0 +1,91 @@
+	ucontext_t, é uma struct pertencente à biblioteca ucontext.h. O 'u' signifca user, 
+portanto ucontext_t significa user context. Essa struct é um contexto que irá guardar as
+informações necessárias para que uma tarefa possa ser interrompida e futuramente continuada
+a partir do mesmo ponto. É necessária para a execução de processos e threads que irão executar
+múltiplas tarefas concomitantes.
+		
+	int getcontext(ucontext_t *upc), a função recebe um ponteiro para uma struct ucontext_t.
+A struct será inicializada e irá salvar o contexto atual nela. Se bem sucedida, retorna 0, caso contrário
+retorna -1.
+
+	int setcontext(const ucontext_t *ucp), a função recebe um ponteiro para uma struct ucontext_t.
+Restaura o contexto apontado pela struct recebida. Se bem sucedida, não retorna, caso contrário 
+retorna -1
+	
+	void makecontext(ucontext_t *ucp, void (*func)(), int argc, ...), manipula contextos
+criados pelo usuário. Modifica um contexto apontado por ucp. Antes da função ser chamada,
+deve-se alocar uma nova pilha para esse contexto, mudar seu endereço para ucp->uc_stack, 
+e definir um contexto que irá sucedê-lo, mudando o endereço desse último para ucp->us_link.
+Quando o contexto ucp é chamado a função func é ativada e passada a ela um conjunto de argumentos
+recebidos também na função makecontext.
+
+	int swapcontext(ucontext_t *oucp, const ucontext_t *ucp), manupula contextos criados 
+pelo usuário. Salva o contexto atual em oucp, e ativa o contexto apontado por ucp. Quando
+bem sucedido a função não retorna, caso contrário, -1.
+
+
+------------------------------------------------------------------------------------------------------
+	uc_stack.ss_sp - é um ponteiro para a pilha que será usada nesse contexto
+
+	uc_stack.ss_size - determina o tamanho da pilha
+
+	uc_stack.ss_flags - determina flags usadas na pilha
+
+	uc_link - caso o contexto atual retorne, aqui será armazenado o endereço para o próximo 
+contexto que será executado
+
+------------------------------------------------------------------------------------------------------
+
+	Observação: no arquivo PDF referente ao exercício em questão é pedido para analisar 
+o arquivo pingpong.c, porém tal arquivo não se encontra nos arquivos disponibilizados, logo, 
+assumi-se que o arquivo que será analisado seja o contexts.c já que esse é o único
+arquivo presente na pasta do exercício p01.
+
+	linha 13 -> Cria três contextos de execução: ContextPing, ContextPong, ContextMain
+	linha 26 -> Salva o ContextPing e aciona o ContextPong, mudando a execução do código para
+a função BodyPong
+	linha 30 -> Salva o ContextPing e aciona o ContextMain, mudando a execução do código para,
+a função main
+	linha 44 -> Salva o ContextPong e aciona o ContextPing, mudando a execução do código para
+a função BodyPing
+	linha 48 -> Salva o ContextPong e aciona o ContextMain, mudando a execução do código para,
+a função main
+	linha 59 -> ContextPing é inicializada
+	linhas 64 - 67 -> Como apontado na questão 1, antes de chamar a função é necessário modificar
+certos membros da struct e alocar uma nova pilha a esse contexto, preenchendo os campos definidos
+na questão 2, além de apontar o contexto que irá sucedê-lo, que nesse caso é um ponteiro nulo.
+	linha 75 -> modifica o contexto ContextPing para receber a função BodyPing, além da string
+"    Ping", que irá apontar o local em que o código deve ser executado quando a o contexto é chamado
+	linha 77 -> mesmo que a linha 59 mas para ContextPong
+	linhas 82 - 85 -> mesmo que a linhas 64 - 67 mas para ContextPong
+	linha 93 -> mesmo que a linha 75 mas para ContextPong e função BodyPong
+	linha 95 -> Salva o ContextMain e aciona ContextPing, mudando a execução do código para 
+a função BodyPing
+	linha 96 -> Salva o ContextMain e aciona ContextPong, mudando a execução do código para
+a função BodyPong
+
+------------------------------------------------------------------------------------------------------
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
