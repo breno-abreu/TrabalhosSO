@@ -1,0 +1,12 @@
+# depslib dependency file v1.0
+1427477736 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p02-3_CB/pingpong-tasks3.c
+	<stdio.h>
+	<stdlib.h>
+	"pingpong.h"
+
+1428415330 /home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p02-3_CB/pingpong.h
+	"datatypes.h"
+
+1588277573 /home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p02-3_CB/datatypes.h
+	<ucontext.h>
+

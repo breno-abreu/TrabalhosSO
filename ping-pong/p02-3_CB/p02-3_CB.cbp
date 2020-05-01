@@ -35,6 +35,9 @@
 		<Unit filename="pingpong-tasks3.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="pingpong.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="pingpong.h" />
 		<Extensions>
 			<code_completion />
