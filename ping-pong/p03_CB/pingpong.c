@@ -2,6 +2,7 @@
 #include "pingpong.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "queue.h"
 
 #define STACKSIZE 32768
 
@@ -13,6 +14,29 @@ task_t *CurrentTask;
 //...tornando possível que cada tarefa tenha um identificador diferente.
 int contador = 0;
 
+task_t dispatcher;
+
+task_t *readyQueue;
+
+
+task_t* scheduler()
+{
+    return readyQueue;
+}
+
+void dispatcher_body()
+{
+    task_t * next;
+
+    while(queue_size((queue_t*)readyQueue) > 0){
+        next = scheduler();
+        if(next){
+            task_switch(next);
+        }
+    }
+    task_exit(0);
+}
+
 //Inicializa algumas variáveis e desativa o buffer da saída padrão
 void pingpong_init()
 {
@@ -21,6 +45,10 @@ void pingpong_init()
     //Inicialmente a tarefa atuar será a relacionada a função main
     CurrentTask = &MainTask;
     MainTask.tid = 0;
+
+    task_create(&dispatcher, dispatcher_body, NULL);
+
+    readyQueue = NULL;
 }
 
 int task_create( task_t *task,
@@ -56,6 +84,9 @@ int task_create( task_t *task,
     printf("task_create: criou tarefa %d\n", task->tid);
     #endif
 
+    if(task != &dispatcher)
+        queue_append((queue_t**) &readyQueue, (queue_t*) task);
+
     return task->tid;
 }
 
@@ -83,14 +114,30 @@ void task_exit (int exitCode)
     printf("task_exit: tarefa %d sendo encerrada\n", CurrentTask->tid);
     #endif
 
+    if(CurrentTask != &dispatcher && CurrentTask != &MainTask){
+        queue_remove((queue_t**) &readyQueue, (queue_t*) CurrentTask);
+        task_switch(&dispatcher);
+    }
+    else
+        task_switch(&MainTask);
+
     //Finaliza a tarefa atual retornando para a função main
-    task_switch(&MainTask);
+
 }
 
 int task_id ()
 {
     //Retorna o identificador da tarefa que está em andamento
     return CurrentTask->tid;
+}
+
+void task_yield ()
+{
+    if(CurrentTask != &MainTask && CurrentTask != &dispatcher){
+        queue_remove((queue_t**) &readyQueue, (queue_t*) CurrentTask);
+        queue_append((queue_t**) &readyQueue, (queue_t*) CurrentTask);
+    }
+    task_switch(&dispatcher);
 }
 
 
