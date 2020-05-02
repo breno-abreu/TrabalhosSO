@@ -13,27 +13,30 @@ task_t *CurrentTask;
 //Variável que será utilizada para inicializar o campo 'tid' da struct 'task_t'...
 //...tornando possível que cada tarefa tenha um identificador diferente.
 int contador = 0;
-
+//Tarefa referente ao dispatcher
 task_t dispatcher;
-
+//Fila de tarefas prontas para serem executadas
 task_t *readyQueue;
 
-
+//Retorna a próxima tarefa a ser executada
 task_t* scheduler()
 {
+    //Retorna a cabeça da lista de prontos, ou seja o primeiro elemento que entrou an lista
     return readyQueue;
 }
 
+//Função recebida pelo dispatcher, irá executar as tarefas que estão na fila, enquanto houverem elementos
 void dispatcher_body()
 {
     task_t * next;
-
+    //Enquanto há elementos na fila de prontos continua executando as tarefas
     while(queue_size((queue_t*)readyQueue) > 0){
         next = scheduler();
         if(next){
             task_switch(next);
         }
     }
+    //Após executar todas as tarefas, retorna para o contexto da função main
     task_exit(0);
 }
 
@@ -45,9 +48,9 @@ void pingpong_init()
     //Inicialmente a tarefa atuar será a relacionada a função main
     CurrentTask = &MainTask;
     MainTask.tid = 0;
-
+    //Cria a tarefa dispatcher
     task_create(&dispatcher, dispatcher_body, NULL);
-
+ 
     readyQueue = NULL;
 }
 
@@ -83,7 +86,7 @@ int task_create( task_t *task,
     #ifdef DEBUG
     printf("task_create: criou tarefa %d\n", task->tid);
     #endif
-
+    //Inclui tarefas novas na lista de prontos, a menos que a tarefa seja o dispatcher
     if(task != &dispatcher)
         queue_append((queue_t**) &readyQueue, (queue_t*) task);
 
@@ -113,16 +116,17 @@ void task_exit (int exitCode)
     #ifdef DEBUG
     printf("task_exit: tarefa %d sendo encerrada\n", CurrentTask->tid);
     #endif
-
+    //Caso a tarefa atual não seja nem a main nem o dispatcher, remove da fila de prontos e...
+    //...troca para a tarefa dispatcher
     if(CurrentTask != &dispatcher && CurrentTask != &MainTask){
         queue_remove((queue_t**) &readyQueue, (queue_t*) CurrentTask);
         task_switch(&dispatcher);
     }
+    //Caso a tarefa a ser finalizada seja o dispatcher, troca para a tarefa main
     else
         task_switch(&MainTask);
 
-    //Finaliza a tarefa atual retornando para a função main
-
+    
 }
 
 int task_id ()
@@ -133,10 +137,13 @@ int task_id ()
 
 void task_yield ()
 {
+    //Caso a tarefa atual não seja nem a tarefa main nem o dispatcher, exclui o elemento da lista...
+    //..e o reposiciona no final da lista
     if(CurrentTask != &MainTask && CurrentTask != &dispatcher){
         queue_remove((queue_t**) &readyQueue, (queue_t*) CurrentTask);
         queue_append((queue_t**) &readyQueue, (queue_t*) CurrentTask);
     }
+    //Troca para o dispatcher
     task_switch(&dispatcher);
 }
 

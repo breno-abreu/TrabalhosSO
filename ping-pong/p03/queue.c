@@ -17,7 +17,7 @@ void queue_append (queue_t **queue, queue_t *elem){
         (*queue)->next = elem;
         (*queue)->prev = elem;
     }
-    //Caso a lista já tenha ao menos um elemento.
+    //Caso a lista já tenha ao menos um elemento, será inserido no final
     else{
         queue_t *aux = (*queue)->prev;
         elem->next = (*queue);
