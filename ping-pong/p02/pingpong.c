@@ -1,4 +1,3 @@
-//#define DEBUG
 #include "pingpong.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +19,6 @@ void pingpong_init()
     setvbuf (stdout, 0, _IONBF, 0);
     //Inicialmente a tarefa atuar será a relacionada a função main
     CurrentTask = &MainTask;
-    MainTask.tid = 0;
 }
 
 int task_create( task_t *task,
@@ -34,7 +32,7 @@ int task_create( task_t *task,
     if(getcontext(&task->context) < 0)
         return -1;
 
-    //Preenche os campos necessários do contexto antes de chamar a função 'makecontext()'
+    //Preenche os campos necessários do contexto antes de utilizar a função 'makecontext()'
     stack = malloc(STACKSIZE);
     if(stack){
         task->context.uc_stack.ss_sp = stack;
@@ -47,16 +45,11 @@ int task_create( task_t *task,
         return -1;
     }
     //Relaciona a função 'start_func' com o contexto em questão
-    makecontext(&task->context, (void*)start_func, 1, (char*) arg);
+    makecontext(&task->context, start_func, 1, (char*) arg);
     //Dá a tarefa um identificador único
     task->tid = contador;
 
-    //Código para depuração caso DEBUG esteja definido
-    #ifdef DEBUG
-    printf("task_create: criou tarefa %d\n", task->tid);
-    #endif
-
-    return task->tid;
+    return 0;
 }
 
 int task_switch (task_t *task)
@@ -68,21 +61,11 @@ int task_switch (task_t *task)
     if(swapcontext(&Aux->context, &task->context) < 0)
         return -1;
 
-    //Código para depuração caso DEBUG esteja definido
-    #ifdef DEBUG
-    printf("task_switch: trocando contexto %d -> %d\n", Aux->tid, task->tid);
-    #endif
-
     return 0;
 }
 
 void task_exit (int exitCode)
 {
-    //Código para depuração caso DEBUG esteja definido
-    #ifdef DEBUG
-    printf("task_exit: tarefa %d sendo encerrada\n", CurrentTask->tid);
-    #endif
-
     //Finaliza a tarefa atual retornando para a função main
     task_switch(&MainTask);
 }

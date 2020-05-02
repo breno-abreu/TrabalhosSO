@@ -78,13 +78,13 @@ int task_switch (task_t *task)
 
 void task_exit (int exitCode)
 {
-    //Código para depuração caso DEBUG esteja definido
-    #ifdef DEBUG
-    printf("task_exit: tarefa %d sendo encerrada\n", CurrentTask->tid);
-    #endif
-
     //Finaliza a tarefa atual retornando para a função main
     task_switch(&MainTask);
+
+    //Código para depuração caso DEBUG esteja definido
+    #ifdef DEBUG
+    printf("task_exit: tarefa %d sendo encerrada", CurrentTask->tid);
+    #endif
 }
 
 int task_id ()
