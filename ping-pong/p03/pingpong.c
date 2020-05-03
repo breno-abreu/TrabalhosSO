@@ -50,7 +50,7 @@ void pingpong_init()
     MainTask.tid = 0;
     //Cria a tarefa dispatcher
     task_create(&dispatcher, dispatcher_body, NULL);
- 
+
     readyQueue = NULL;
 }
 
@@ -126,7 +126,7 @@ void task_exit (int exitCode)
     else
         task_switch(&MainTask);
 
-    
+
 }
 
 int task_id ()
@@ -147,7 +147,32 @@ void task_yield ()
     task_switch(&dispatcher);
 }
 
+void task_suspend (task_t *task, task_t **queue)
+{
+    if(queue && task){
+        queue_t * aux = (queue_t*) task;
+        //Nó é retirado caso ja pertença a alguma fila
+        if(aux->next != NULL && aux->prev != NULL){
+            aux->prev->next = aux->next;
+            aux->next->prev = aux->prev;
+        }
+        //Adiciona o nó na fila de prontos
+        queue_append((queue_t**) &queue, aux);
+    }
 
+}
+
+void task_resume (task_t *task)
+{
+    queue_t * aux = (queue_t*) task;
+    //Nó é retirado caso ja pertença a alguma fila
+    if(aux->next != NULL && aux->prev != NULL){
+        aux->prev->next = aux->next;
+        aux->next->prev = aux->prev;
+    }
+    //Adiciona o nó na fila de prontos
+    queue_append((queue_t**) &readyQueue, aux);
+}
 
 
 
