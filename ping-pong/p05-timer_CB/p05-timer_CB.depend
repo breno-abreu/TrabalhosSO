@@ -1,0 +1,7 @@
+# depslib dependency file v1.0
+1431711261 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p05-timer_CB/timer.c
+	<stdio.h>
+	<stdlib.h>
+	<signal.h>
+	<sys/time.h>
+

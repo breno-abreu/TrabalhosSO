@@ -1,0 +1,26 @@
+# depslib dependency file v1.0
+1427481559 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p05-preempcao_CB/pingpong-preempcao.c
+	<stdio.h>
+	<stdlib.h>
+	"pingpong.h"
+
+1588379364 /home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p05-preempcao_CB/pingpong.h
+	"datatypes.h"
+
+1588629881 /home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p05-preempcao_CB/datatypes.h
+	<ucontext.h>
+
+1588629815 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p05-preempcao_CB/pingpong.c
+	"pingpong.h"
+	<stdio.h>
+	<stdlib.h>
+	<signal.h>
+	<sys/time.h>
+	"queue.h"
+
+1440409443 /home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p05-preempcao_CB/queue.h
+
+1588457828 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p05-preempcao_CB/queue.c
+	"queue.h"
+	<stdio.h>
+

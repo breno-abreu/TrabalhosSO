@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1431710810 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p05-signal_CB/signal.c
+	<stdio.h>
+	<stdlib.h>
+	<signal.h>
+
