@@ -28,7 +28,7 @@ struct itimerval timer;//Estrutura de inicialização do timer
 
 int contadorTimer;
 
-unsigned int tempoAtual;//Contador do tempod e execução do programa em milissegundos
+unsigned int tempoAtual;
 
 //Função que será ativada quando o temporizador chegar a um determinado tempo
 void tratador()
@@ -43,11 +43,6 @@ void tratador()
             CurrentTask->contadorQuantum = QUANTUM;
             task_yield();
         }
-
-        /*#ifdef DEBUG
-        printf("tratador. Tarefa: %d, quantum: %d\n", CurrentTask->tid, CurrentTask->contadorQuantum);
-        #endif*/
-
         //Decrementa o contador de quantum da tarefa atual
         CurrentTask->contadorQuantum--;
     }
@@ -56,7 +51,41 @@ void tratador()
 //Retorna a próxima tarefa a ser executada
 task_t* scheduler()
 {
-    return readyQueue;//Retorna o primeiro elemento da fila de prontos
+    task_t* aux = readyQueue;
+    task_t* tarefa = NULL;
+    int minPrio = 21;
+    int minIden = 10;
+    int tamanhoFila = queue_size((queue_t*) readyQueue);
+
+    //Percorre a lista de prontos
+    for(int i = 0; i < tamanhoFila; i++){
+        //Se o valor da prioridade dinâmica for menor que o valor de 'minPrio', 'minPrio' é atualizada assim como a tarefa que será retornada.
+        //Além disso, caso duas tarefas tenham o mesmo valor de prioridade dinâmica, o fator de desempate é qual delas possuí o menor valor identificador 'tid'
+        if(aux->prioridadeDinamica < minPrio || (aux->prioridadeDinamica == minPrio && aux->tid < minIden)){
+            minPrio = aux->prioridadeDinamica;
+            minIden = aux->tid;
+            tarefa = aux;
+        }
+        aux = aux->next;
+    }
+
+    //Percorre a fila de prontos novamente
+    for(int i = 0; i < tamanhoFila; i++){
+        //Caso a tarefa não seja a escolhida para ser retornada, ou seja, não seja a de maior prioridade, ...
+        //...ela é envelhecida somando sua prioridade dinâmica com o valor predefinido 'aging'
+        if(aux != tarefa){
+            aux->prioridadeDinamica += aging;
+            if(aux->prioridadeDinamica < -20)
+                aux->prioridadeDinamica = -20;
+        }
+        //Caso a tarefa seja a escolhida, ou seja, tem maior prioridade, seu valor de prioridade dinâmica é atualizada recebendo seu valor de prioridade estática
+        else
+            aux->prioridadeDinamica = aux->prioridadeEstatica;
+
+        aux = aux->next;
+    }
+    //Retorna a tarefa de maior prioridade
+    return tarefa;
 }
 
 //Função recebida pelo dispatcher, irá executar as tarefas que estão na fila, enquanto houverem elementos
@@ -67,6 +96,7 @@ void dispatcher_body()
     while(queue_size((queue_t*)readyQueue) > 0){
         next = scheduler();
         next->ativacoes++;
+
         #ifdef DEBUG
         printf("dispatcher. Proxima tarefa é: %d\n", next->tid);
         #endif
@@ -86,7 +116,9 @@ void pingpong_init()
     setvbuf (stdout, 0, _IONBF, 0);
     //Inicialmente a tarefa atuar será a relacionada a função main
     CurrentTask = &MainTask;
+
     contador = 0;
+
     MainTask.tid = 0;
     //Cria a tarefa dispatcher
     task_create(&dispatcher, dispatcher_body, NULL);
@@ -303,7 +335,7 @@ int task_getprio (task_t *task)
 
 unsigned int systime ()
 {
-    return tempoAtual;//Retorna o tempo de execução do programa em ms
+    return tempoAtual;
 }
 
 

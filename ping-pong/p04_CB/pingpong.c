@@ -34,7 +34,7 @@ task_t* scheduler()
     for(int i = 0; i < tamanhoFila; i++){
         //Se o valor da prioridade dinâmica for menor que o valor de 'minPrio', 'minPrio' é atualizada assim como a tarefa que será retornada.
         //Além disso, caso duas tarefas tenham o mesmo valor de prioridade dinâmica, o fator de desempate é qual delas possuí o menor valor identificador 'tid'
-        if(aux->prioridadeDinamica <= minPrio && aux->tid < minIden){
+        if(aux->prioridadeDinamica < minPrio || (aux->prioridadeDinamica == minPrio && aux->tid < minIden)){
             minPrio = aux->prioridadeDinamica;
             minIden = aux->tid;
             tarefa = aux;
