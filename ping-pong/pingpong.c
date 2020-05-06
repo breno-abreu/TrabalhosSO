@@ -5,28 +5,36 @@
 #include <signal.h>
 #include <sys/time.h>
 #include "queue.h"
-
 #define STACKSIZE 32768
 #define QUANTUM 20
 
-task_t MainTask;                            //Tarefa referente ao contexto da função main
-task_t *CurrentTask;                        //Variável que aponta para a tarefa que está em andamento
-int contador;                               //Variável que será utilizada para inicializar o campo 'tid' da struct 'task_t'...
-                                            //...tornando possível que cada tarefa tenha um identificador diferente.
-task_t dispatcher;                          //Tarefa referente ao dispatcher
-task_t *readyQueue;                         //Fila de tarefas prontas para serem executadas
-int aging;                                  //Fator de envelhecimento
-struct sigaction action;                    //Estrutura que define o tratador de sinal
-struct itimerval timer;                     //Estrutura de inicialização do timer
-int contadorTimer;                          //Contador referente ao Quantum de cada tarefa
-unsigned int tempoAtual;                    //Conta o tempo de execução do programa em milisegundos
+//Tarefa referente ao contexto da função main
+task_t MainTask;
+//Variável que aponta para a tarefa que está em andamento
+task_t *CurrentTask;
+//Variável que será utilizada para inicializar o campo 'tid' da struct 'task_t'...
+//...tornando possível que cada tarefa tenha um identificador diferente.
+int contador;
+//Tarefa referente ao dispatcher
+task_t dispatcher;
+//Fila de tarefas prontas para serem executadas
+task_t *readyQueue;
+
+int aging;//Fator de envelhecimento
+
+struct sigaction action;//Estrutura que define o tratador de sinal
+
+struct itimerval timer;//Estrutura de inicialização do timer
+
+int contadorTimer;
+
+unsigned int tempoAtual;//Contador do tempod e execução do programa em milissegundos
 
 //Função que será ativada quando o temporizador chegar a um determinado tempo
 void tratador()
 {
-    tempoAtual++;                           //Contador de tempo de execução é atualizado a cada 1 milisegundo
-    CurrentTask->tempoProcessamento++;      //Tempo de processamento da tarefa atual é atualizado
-
+    tempoAtual++;
+    CurrentTask->tempoProcessamento++;
     //Caso seja uma tarefa de usuário
     if(CurrentTask->tarefaUsuario == 1){
         //Caso o quantum chegue a zero, seu quantum é atualizado para o valor de quantum predefinido, ...
@@ -35,47 +43,20 @@ void tratador()
             CurrentTask->contadorQuantum = QUANTUM;
             task_yield();
         }
-        CurrentTask->contadorQuantum--;     //Decrementa o contador de quantum da tarefa atual
+
+        /*#ifdef DEBUG
+        printf("tratador. Tarefa: %d, quantum: %d\n", CurrentTask->tid, CurrentTask->contadorQuantum);
+        #endif*/
+
+        //Decrementa o contador de quantum da tarefa atual
+        CurrentTask->contadorQuantum--;
     }
 }
 
 //Retorna a próxima tarefa a ser executada
 task_t* scheduler()
 {
-    task_t* aux = readyQueue;
-    task_t* tarefa = NULL;
-    int minPrio = 21;                       //Variável que recebe o valor de prioridade da tarefa com maior prioridade
-    int minIden = 10;                       //Variável que recebe o valor identificador da tarefa com maior prioridade
-    int tamanhoFila = queue_size((queue_t*) readyQueue);//Recebe o tamanho da fila de prontos
-
-    //Percorre a lista de prontos
-    for(int i = 0; i < tamanhoFila; i++){
-        //Se o valor da prioridade dinâmica for menor que o valor de 'minPrio', 'minPrio' é atualizada assim como a tarefa que será retornada.
-        //Além disso, caso duas tarefas tenham o mesmo valor de prioridade dinâmica, o fator de desempate é qual delas possui o menor valor identificador 'tid'
-        if(aux->prioridadeDinamica < minPrio || (aux->prioridadeDinamica == minPrio && aux->tid < minIden)){
-            minPrio = aux->prioridadeDinamica;
-            minIden = aux->tid;
-            tarefa = aux;
-        }
-        aux = aux->next;
-    }
-
-    //Percorre a fila de prontos novamente
-    for(int i = 0; i < tamanhoFila; i++){
-        //Caso a tarefa não seja a escolhida para ser retornada, ou seja, não seja a de maior prioridade, ...
-        //...ela é envelhecida somando sua prioridade dinâmica com o valor predefinido 'aging'
-        if(aux != tarefa){
-            aux->prioridadeDinamica += aging;
-            if(aux->prioridadeDinamica < -20)
-                aux->prioridadeDinamica = -20;
-        }
-        //Caso a tarefa seja a escolhida, ou seja, tem maior prioridade, seu valor de prioridade dinâmica é atualizada recebendo seu valor de prioridade estática
-        else
-            aux->prioridadeDinamica = aux->prioridadeEstatica;
-
-        aux = aux->next;
-    }
-    return tarefa;                          //Retorna a tarefa de maior prioridade
+    return readyQueue;//Retorna o primeiro elemento da fila de prontos
 }
 
 //Função recebida pelo dispatcher, irá executar as tarefas que estão na fila, enquanto houverem elementos
@@ -84,29 +65,36 @@ void dispatcher_body()
     task_t * next;
     //Enquanto há elementos na fila de prontos continua executando as tarefas
     while(queue_size((queue_t*)readyQueue) > 0){
-        next = scheduler();                 //next recebe a próxima tarefa a ser executada
-        next->ativacoes++;                  //Atualiza a quantidade de ativações da tarefa a ser executada
+        next = scheduler();
+        next->ativacoes++;
+        #ifdef DEBUG
+        printf("dispatcher. Proxima tarefa é: %d\n", next->tid);
+        #endif
+
         if(next){
             task_switch(next);
         }
     }
-    task_exit(0);                           //Após executar todas as tarefas, retorna para o contexto da função main
+    //Após executar todas as tarefas, retorna para o contexto da função main
+    task_exit(0);
 }
 
 //Inicializa algumas variáveis e desativa o buffer da saída padrão
 void pingpong_init()
 {
-
-    setvbuf (stdout, 0, _IONBF, 0);         //desativa o buffer da saida padrao (stdout), usado pela função printf
-    CurrentTask = &MainTask;                //Inicialmente a tarefa atual será a relacionada a função main
+    //desativa o buffer da saida padrao (stdout), usado pela função printf
+    setvbuf (stdout, 0, _IONBF, 0);
+    //Inicialmente a tarefa atuar será a relacionada a função main
+    CurrentTask = &MainTask;
     contador = 0;
     MainTask.tid = 0;
-    task_create(&dispatcher, dispatcher_body, NULL);    //Cria a tarefa dispatcher
+    //Cria a tarefa dispatcher
+    task_create(&dispatcher, dispatcher_body, NULL);
     dispatcher.tarefaUsuario = 0;
+
     readyQueue = NULL;
+
     aging = -1;
-    contadorTimer = QUANTUM;
-    tempoAtual = 0;
 
     //Registra a ação para o sinal de timer SIGALRM
     action.sa_handler = tratador;
@@ -117,16 +105,24 @@ void pingpong_init()
         exit (1);
     }
     //Ajusta valores  do temporizador, que irá gerar um pulso a cada 1 milisegundo
-    timer.it_value.tv_usec = 1;             // primeiro disparo, em micro-segundos
-    timer.it_value.tv_sec  = 0;             // primeiro disparo, em segundos
-    timer.it_interval.tv_usec = 1000;       // disparos subsequentes, em micro-segundos
-    timer.it_interval.tv_sec  = 0;          // disparos subsequentes, em segundos
+    timer.it_value.tv_usec = 1;      // primeiro disparo, em micro-segundos
+    timer.it_value.tv_sec  = 0;      // primeiro disparo, em segundos
+    timer.it_interval.tv_usec = 1000;   // disparos subsequentes, em micro-segundos
+    timer.it_interval.tv_sec  = 0;   // disparos subsequentes, em segundos
 
     //Arma o temporizador ITIMER_REAL
     if (setitimer (ITIMER_REAL, &timer, 0) < 0){
         perror ("Erro em setitimer: ");
         exit (1);
     }
+
+    contadorTimer = QUANTUM;
+
+    tempoAtual = 0;
+
+    #ifdef DEBUG
+    printf("Em pingpong_init\n");
+    #endif
 }
 
 int task_create( task_t *task,
@@ -152,9 +148,10 @@ int task_create( task_t *task,
         perror ("Erro na criação da pilha: ");
         return -1;
     }
-
-    makecontext(&task->context, (void*)start_func, 1, (char*) arg); //Relaciona a função 'start_func' com o contexto em questão
-    task->tid = contador;                   //Dá a tarefa um identificador único
+    //Relaciona a função 'start_func' com o contexto em questão
+    makecontext(&task->context, (void*)start_func, 1, (char*) arg);
+    //Dá a tarefa um identificador único
+    task->tid = contador;
 
     //Código para depuração caso DEBUG esteja definido
     #ifdef DEBUG
@@ -169,8 +166,9 @@ int task_create( task_t *task,
     task->prioridadeEstatica = 0;
     task->prioridadeDinamica = 0;
 
-    task->tarefaUsuario = 1;                //Com valor 1 significa que a tarefa é de usuário
-    task->contadorQuantum = QUANTUM;        //Inicializado o contador de quantum com o quantum predefinido
+    task->tarefaUsuario = 1; //Com valor 1 significa que a tarefa é de usuário
+    task->contadorQuantum = QUANTUM; //Inicializad o contador de quantum com o quantum predefinido
+
     task->tempoExecucao = systime();
     task->tempoProcessamento = 0;
     task->ativacoes = 0;
@@ -180,18 +178,17 @@ int task_create( task_t *task,
 
 int task_switch (task_t *task)
 {
-
-    task_t *Aux = CurrentTask;              //O ponteiro 'CurrentTask' aponta para a tarefa recebida
+    //O ponteiro 'CurrentTask' aponta para a tarefa recebida
+    task_t *Aux = CurrentTask;
     CurrentTask = task;
+    //Salva o contexto da tarefa anterior e aciona o contexto da tarefa recebida
+    if(swapcontext(&Aux->context, &task->context) < 0)
+        return -1;
 
     //Código para depuração caso DEBUG esteja definido
     #ifdef DEBUG
     printf("task_switch: trocando contexto %d -> %d\n", Aux->tid, task->tid);
     #endif
-
-    //Salva o contexto da tarefa anterior e aciona o contexto da tarefa recebida
-    if(swapcontext(&Aux->context, &task->context) < 0)
-        return -1;
 
     return 0;
 }
@@ -219,11 +216,13 @@ void task_exit (int exitCode)
                  dispatcher.tid, dispatcher.tempoExecucao,  dispatcher.tempoProcessamento, dispatcher.ativacoes);
         task_switch(&MainTask);
     }
+
 }
 
 int task_id ()
 {
-    return CurrentTask->tid;                //Retorna o identificador da tarefa que está em andamento
+    //Retorna o identificador da tarefa que está em andamento
+    return CurrentTask->tid;
 }
 
 void task_yield ()
@@ -238,8 +237,9 @@ void task_yield ()
         queue_remove((queue_t**) &readyQueue, (queue_t*) CurrentTask);
         queue_append((queue_t**) &readyQueue, (queue_t*) CurrentTask);
     }
-    dispatcher.ativacoes++;                 //Atualiza a quantidade de ativações do dispatcher
-    task_switch(&dispatcher);               //Troca para o dispatcher
+    //Troca para o dispatcher
+    dispatcher.ativacoes++;
+    task_switch(&dispatcher);
 }
 
 void task_suspend (task_t *task, task_t **queue)
@@ -303,7 +303,7 @@ int task_getprio (task_t *task)
 
 unsigned int systime ()
 {
-    return tempoAtual;                      //Retorna o tempo atual de execução do programa
+    return tempoAtual;//Retorna o tempo de execução do programa em ms
 }
 
 
