@@ -24,7 +24,6 @@ unsigned int tempoAtual;                    //Conta o tempo de execução do pro
 //Função que será ativada quando o temporizador chegar a um determinado tempo
 void tratador()
 {
-    tempoAtual++;                           //Contador de tempo de execução é atualizado a cada 1 milisegundo
     CurrentTask->tempoProcessamento++;      //Tempo de processamento da tarefa atual é atualizado
 
     //Caso seja uma tarefa de usuário
@@ -37,6 +36,7 @@ void tratador()
         }
         CurrentTask->contadorQuantum--;     //Decrementa o contador de quantum da tarefa atual
     }
+    tempoAtual++;                           //Contador de tempo de execução é atualizado a cada 1 milisegundo
 }
 
 //Retorna a próxima tarefa a ser executada
@@ -108,7 +108,7 @@ void pingpong_init()
     readyQueue = NULL;
     aging = -1;
     contadorTimer = QUANTUM;
-    tempoAtual = 0;
+    tempoAtual = -1;
 
     //Registra a ação para o sinal de timer SIGALRM
     action.sa_handler = tratador;

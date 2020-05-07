@@ -1,0 +1,26 @@
+# depslib dependency file v1.0
+1427482226 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p07_CB/pingpong-maintask.c
+	<stdio.h>
+	<stdlib.h>
+	"pingpong.h"
+
+1588379364 /home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p07_CB/pingpong.h
+	"datatypes.h"
+
+1588878375 /home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p07_CB/datatypes.h
+	<ucontext.h>
+
+1588457828 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p07_CB/queue.c
+	"queue.h"
+	<stdio.h>
+
+1440409443 /home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p07_CB/queue.h
+
+1588878453 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p07_CB/pingpong.c
+	"pingpong.h"
+	<stdio.h>
+	<stdlib.h>
+	<signal.h>
+	<sys/time.h>
+	"queue.h"
+

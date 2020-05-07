@@ -24,6 +24,7 @@ unsigned int tempoAtual;                    //Conta o tempo de execução do pro
 //Função que será ativada quando o temporizador chegar a um determinado tempo
 void tratador()
 {
+    tempoAtual++;                           //Contador de tempo de execução é atualizado a cada 1 milisegundo
     CurrentTask->tempoProcessamento++;      //Tempo de processamento da tarefa atual é atualizado
 
     //Caso seja uma tarefa de usuário
@@ -31,18 +32,18 @@ void tratador()
         //Caso o quantum chegue a zero, seu quantum é atualizado para o valor de quantum predefinido, ...
         //...,a tarefa é adicionada ao final da fila de prontos e o contexto é mudado para o dispatcher
         if(CurrentTask->contadorQuantum <= 0){
-            CurrentTask->contadorQuantum = QUANTUM;
+            CurrentTask->contadorQuantum = CurrentTask->quantumEstatico;
             task_yield();
         }
         CurrentTask->contadorQuantum--;     //Decrementa o contador de quantum da tarefa atual
     }
-    tempoAtual++;                           //Contador de tempo de execução é atualizado a cada 1 milisegundo
+    
 }
 
 //Retorna a próxima tarefa a ser executada
 task_t* scheduler()
 {
-    task_t* aux = readyQueue;
+    /*task_t* aux = readyQueue;
     task_t* tarefa = NULL;
     int minPrio = 21;                       //Variável que recebe o valor de prioridade da tarefa com maior prioridade
     int minIden = 10;                       //Variável que recebe o valor identificador da tarefa com maior prioridade
@@ -75,7 +76,9 @@ task_t* scheduler()
 
         aux = aux->next;
     }
-    return tarefa;                          //Retorna a tarefa de maior prioridade
+    return tarefa;                          //Retorna a tarefa de maior prioridade*/
+
+    return readyQueue;                      //Retorna o primeiro elemento da fila de prontos
 }
 
 //Função recebida pelo dispatcher, irá executar as tarefas que estão na fila, enquanto houverem elementos
@@ -90,7 +93,7 @@ void dispatcher_body()
             task_switch(next);
         }
     }
-    task_exit(0);                           //Após executar todas as tarefas, retorna para o contexto da função main
+    task_exit(0);                           //Após executar todas as tarefas, retorna para o contexto da função main ou para o dispatcher
 }
 
 //Inicializa algumas variáveis e desativa o buffer da saída padrão
@@ -98,12 +101,15 @@ void pingpong_init()
 {
 
     setvbuf (stdout, 0, _IONBF, 0);         //desativa o buffer da saida padrao (stdout), usado pela função printf
+    readyQueue = NULL;
+    contador = -1;
+
+    task_create(&MainTask, NULL, NULL);     //Cria a tarefa main, que fará referência a função principal do programa
     CurrentTask = &MainTask;                //Inicialmente a tarefa atual será a relacionada a função main
-    contador = 0;
-    MainTask.tid = 0;
+
     task_create(&dispatcher, dispatcher_body, NULL);    //Cria a tarefa dispatcher
     dispatcher.tarefaUsuario = 0;
-    readyQueue = NULL;
+
     aging = -1;
     contadorTimer = QUANTUM;
     tempoAtual = -1;
@@ -127,6 +133,8 @@ void pingpong_init()
         perror ("Erro em setitimer: ");
         exit (1);
     }
+
+    task_yield();                           //Dispatcher é ativado
 }
 
 int task_create( task_t *task,
@@ -170,7 +178,8 @@ int task_create( task_t *task,
     task->prioridadeDinamica = 0;
 
     task->tarefaUsuario = 1;                //Com valor 1 significa que a tarefa é de usuário
-    task->contadorQuantum = QUANTUM;        //Inicializado o contador de quantum com o quantum predefinido
+    task->quantumEstatico = QUANTUM;
+    task->contadorQuantum = task->quantumEstatico;//Inicializado o contador de quantum com o quantum predefinido
     task->tempoExecucao = systime();
     task->tempoProcessamento = 0;
     task->ativacoes = 0;
@@ -203,9 +212,9 @@ void task_exit (int exitCode)
     printf("task_exit: tarefa %d sendo encerrada\n", CurrentTask->tid);
     #endif
 
-    //Caso a tarefa atual não seja nem a main nem o dispatcher, remove da fila de prontos e...
+    //Caso a tarefa atual não seja o dispatcher, remove a tarefa atual da fila de prontos e...
     //...troca para a tarefa dispatcher
-    if(CurrentTask != &dispatcher && CurrentTask != &MainTask){
+    if(CurrentTask != &dispatcher){
         queue_remove((queue_t**) &readyQueue, (queue_t*) CurrentTask);
         CurrentTask->tempoExecucao = systime() - CurrentTask->tempoExecucao;
         printf("Task: %d exit: running time %d ms, cpu time %d ms, %d activations\n",
@@ -232,9 +241,9 @@ void task_yield ()
     printf("task_yield. Tarefa atual: %d. Trocando para dispatcher\n", CurrentTask->tid);
     #endif
 
-    //Caso a tarefa atual não seja nem a tarefa main nem o dispatcher, exclui o elemento da lista...
-    //..e o reposiciona no final da lista
-    if(CurrentTask != &MainTask && CurrentTask != &dispatcher){
+    //Caso a tarefa atual não seja o dispatcher, exclui o elemento da lista...
+    //..e o reposiciona no final da fila
+    if(CurrentTask != &dispatcher){
         queue_remove((queue_t**) &readyQueue, (queue_t*) CurrentTask);
         queue_append((queue_t**) &readyQueue, (queue_t*) CurrentTask);
     }
