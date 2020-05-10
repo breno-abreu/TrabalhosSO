@@ -27,7 +27,7 @@ void tratador()
     CurrentTask->tempoProcessamento++;      //Tempo de processamento da tarefa atual é atualizado
 
     //Caso seja uma tarefa de usuário
-    if(CurrentTask->tarefaUsuario == 1){
+    if(CurrentTask->tipoTarefa == USUARIO){
         //Caso o quantum chegue a zero, seu quantum é atualizado para o valor de quantum predefinido, ...
         //...,a tarefa é adicionada ao final da fila de prontos e o contexto é mudado para o dispatcher
         if(CurrentTask->contadorQuantum <= 0){
@@ -101,13 +101,14 @@ void pingpong_init()
 
     setvbuf (stdout, 0, _IONBF, 0);         //desativa o buffer da saida padrao (stdout), usado pela função printf
     readyQueue = NULL;
+
     contador = -1;
 
     task_create(&MainTask, NULL, NULL);     //Cria a tarefa main, que fará referência a função principal do programa
     CurrentTask = &MainTask;                //Inicialmente a tarefa atual será a relacionada a função main
 
     task_create(&dispatcher, dispatcher_body, NULL);    //Cria a tarefa dispatcher
-    dispatcher.tarefaUsuario = 0;
+    dispatcher.tipoTarefa = SISTEMA;
 
     aging = -1;
     contadorTimer = QUANTUM;
@@ -140,7 +141,6 @@ int task_create( task_t *task,
                  void (*start_func)(void *),
                  void *arg)
 {
-
     char *stack;
     contador++;
     //Inicializa o contexto de uma tarefa
@@ -176,24 +176,21 @@ int task_create( task_t *task,
     task->prioridadeEstatica = 0;
     task->prioridadeDinamica = 0;
 
-    task->tarefaUsuario = 1;                //Com valor 1 significa que a tarefa é de usuário
-
+    task->tipoTarefa = USUARIO;               //Com valor 1 significa que a tarefa é de usuário
     task->quantumEstatico = QUANTUM;
-    if(task->tid == 0)
-         task->quantumEstatico = 20;
-
     task->contadorQuantum = task->quantumEstatico;//Inicializado o contador de quantum com o quantum predefinido
 
     task->tempoExecucao = systime();
     task->tempoProcessamento = 0;
     task->ativacoes = 0;
+    task->suspendedQueue = NULL;
+    task->exitCode = 0;
 
     return task->tid;
 }
 
 int task_switch (task_t *task)
 {
-
     task_t *Aux = CurrentTask;              //O ponteiro 'CurrentTask' aponta para a tarefa recebida
     CurrentTask = task;
 
@@ -215,6 +212,23 @@ void task_exit (int exitCode)
     #ifdef DEBUG
     printf("task_exit: tarefa %d sendo encerrada\n", CurrentTask->tid);
     #endif
+
+    task_t *aux = CurrentTask->suspendedQueue;
+    task_t *aux2 = NULL;
+    int tamanhoFila = queue_size((queue_t*)aux);
+
+    //Caso haja algum elemento na fila de tarefas suspensas da tarefa que será finalizada
+    if(aux){
+        //Percorre a fila e resume todas as tarefas que pertencem a ela
+        for(int i = 0; i < tamanhoFila; i++){
+            aux2 = aux->next;
+            task_resume(aux);
+            aux = aux2;
+        }
+    }
+
+    CurrentTask->suspendedQueue = NULL;
+    CurrentTask->exitCode = exitCode;       //Escreve o código de saída da tarefa que será finalizada
 
     //Caso a tarefa atual não seja o dispatcher, remove a tarefa atual da fila de prontos e...
     //...troca para a tarefa dispatcher
@@ -257,28 +271,36 @@ void task_yield ()
 
 void task_suspend (task_t *task, task_t **queue)
 {
-    if(queue && task){
-        queue_t * aux = (queue_t*) task;
-        //Nó é retirado caso ja pertença a alguma fila
-        if(aux->next != NULL && aux->prev != NULL){
-            aux->prev->next = aux->next;
-            aux->next->prev = aux->prev;
-        }
-        //Adiciona o nó na fila de prontos
-        queue_append((queue_t**) &queue, aux);
-    }
+    task_t* aux = NULL;
+
+    //Caso a tarefa recebida não seja nula, aux recebe a tarefa recebida
+    if (task)
+        aux = task;
+    //Caso a tarefa recebida seja nula, aux recebe a tarefa atual
+    else
+        aux = CurrentTask;
+
+    aux->estado = SUSPENSA;                 //Troca o estado da tarefa para suspensa
+    queue_remove((queue_t**) &readyQueue, (queue_t*) aux);  //Remove a tarefa da fila de prontas
+    queue_append((queue_t**) queue, (queue_t*) aux);        //Inseri a tarefa na fila recebida
 }
 
 void task_resume (task_t *task)
 {
-    queue_t * aux = (queue_t*) task;
-    //Nó é retirado caso ja pertença a alguma fila
-    if(aux->next != NULL && aux->prev != NULL){
-        aux->prev->next = aux->next;
-        aux->next->prev = aux->prev;
+    if(task){
+        task->estado = PRONTA;              //Troca o estado da tarefa para pronta
+
+        //Retira a tarefa de sua fila atual
+        if(task->next && task->prev){
+            task->prev->next = task->next;
+            task->next->prev = task->prev;
+        }
+
+        task->next = NULL;
+        task->prev = NULL;
+
+        queue_append((queue_t**) &readyQueue, (queue_t*) task); //Inseri a tarefa recebida na lista de prontas
     }
-    //Adiciona o nó na fila de prontos
-    queue_append((queue_t**) &readyQueue, aux);
 }
 
 void task_setprio (task_t *task, int prio)
@@ -317,6 +339,20 @@ int task_getprio (task_t *task)
 unsigned int systime ()
 {
     return tempoAtual;                      //Retorna o tempo atual de execução do programa
+}
+
+int task_join (task_t *task)
+{
+    //Caso a tarefa recebida e exista, suspende a tarefa atual, inseri ela na fila de suspensas tarefa recebida...
+    //...e ativa a tarefa recebida
+    if(task){
+        task_t *aux = task->suspendedQueue;
+        task_suspend(NULL, &aux);
+        task->suspendedQueue = aux;
+        task_switch(task);
+        return task->exitCode;
+    }
+    return -1;
 }
 
 
