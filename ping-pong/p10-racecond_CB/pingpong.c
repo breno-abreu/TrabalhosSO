@@ -308,7 +308,7 @@ void task_resume (task_t *task)
         task->next = NULL;
         task->prev = NULL;
 
-        queue_append((queue_t**) &readyQueue, (queue_t*) task); //Inseri a tarefa recebida na lista de prontas
+        queue_append((queue_t**) &readyQueue, (queue_t*) task); //Inseri a tarefa recebida na fila de prontas
     }
 }
 
@@ -375,6 +375,76 @@ void task_sleep (int t)
     task_yield();
 }
 
+int sem_create (semaphore_t *s, int value)
+{
+    //Caso o semáforo 's' exista, receb o valor 'value' e inicia sua fila vazia
+    if(s){
+        s->value = value;
+        s->semQueue = NULL;
+        return 0;
+    }
+    return -1;
+}
+
+int sem_down (semaphore_t *s)
+{
+    if(s){
+        s->value--;
+        //Caso 'value' seja menor que zero, retira a tarefa atual da lista de prontas e a coloca no final da fila do semáforo recebido...
+        //...bloqueando a tarefa imediatamente e devolvendo o contexto para o dispatcher
+        if(s->value < 0){
+            //task_t *aux = s->semQueue;
+            task_suspend(NULL, &s->semQueue);
+            //s->semQueue = aux;
+            task_yield();
+        }
+        return 0;
+    }
+    return -1;
+}
+
+int sem_up (semaphore_t *s)
+{
+    if(s){
+        s->value++;
+        //Se existir elementos na fila, e 'value' for menor ou igual a zero, acorda o primeiro elemento da fila do semáforo...
+        //...e não bloqueia a tarefa atual
+        if(s->value <= 0 && s->semQueue){
+            task_t* aux = s->semQueue;
+
+            if(aux->next != aux)
+                s->semQueue = aux->next;
+            else
+                s->semQueue = NULL;
+
+            task_resume(aux);
+        }
+        return 0;
+    }
+    return -1;
+}
+
+int sem_destroy (semaphore_t *s)
+{
+    //Caso o semáforo 's' exista e haja elementos em sua fila
+    if(s && s->semQueue){
+        task_t *aux = s->semQueue;
+        task_t *auxNext;
+        int tamanhoFila = queue_size((queue_t*)aux);
+        //Percorre a fila acordando todas as tarefas
+        for(int i = 0; i < tamanhoFila; i++){
+            auxNext = aux->next;
+            task_resume(aux);
+            aux = auxNext;
+        }
+        s->semQueue = NULL;
+        s = NULL;
+    }
+    else if(!s)
+        return -1;
+
+    return 0;
+}
 
 
 

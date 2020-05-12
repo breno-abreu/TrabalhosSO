@@ -305,9 +305,9 @@ void task_resume (task_t *task)
             task->prev->next = task->next;
             task->next->prev = task->prev;
         }
-
         task->next = NULL;
         task->prev = NULL;
+
         queue_append((queue_t**) &readyQueue, (queue_t*) task); //Inseri a tarefa recebida na lista de prontas
     }
 }
@@ -355,10 +355,9 @@ int task_join (task_t *task)
     //Caso a tarefa recebida e exista e ainda estiver ativa, suspende a tarefa atual, inseri-a na fila de suspensas...
     //...e ativa o dispatcher
     if(task && task->estado != FINALIZADA){
-        task_t *aux = task->suspendedQueue;
-        task_suspend(NULL, &aux);
-        task->suspendedQueue = aux;
-        //task_switch(task);
+        //task_t *aux = task->suspendedQueue;
+        task_suspend(NULL, &task->suspendedQueue);
+        //task->suspendedQueue = aux;
         task_yield();
         return task->exitCode;
     }
