@@ -1,9 +1,11 @@
 Falta:
 
-- Projetos: 9, 10, 11 e 12
+- Projetos: 10, 11 e 12
 - Revisar os trabalhos, procurar por soluções melhores
 - Revisar os códigos de debugg
 - Revisar comentários; trocar 'prontos' por 'prontas'
 - Decidir um padrão para o nome das variáveis (PT/EN)
 - Acertar o contador de tempo de execução
 - Recolocar o código de prioridade comentado nos projetos faltantes
+- Verificar existência de warnings em todos os programas
+- Verificar a corretude das funções do programa referente ao projeto p10.2
