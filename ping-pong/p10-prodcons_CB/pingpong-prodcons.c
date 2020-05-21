@@ -17,11 +17,10 @@ void produtor(void *arg)
 {
     while(1){
         task_sleep(1);
-        item = rand() % 99;
-
         sem_down(&s_vaga);
         sem_down(&s_buffer);
-        printf("%s produziu %d\n", (char*)arg, item);
+
+        item = rand() % 100;
 
         int cont = 0;
         while(buffer[cont] != -1 && cont < 5){
@@ -35,6 +34,7 @@ void produtor(void *arg)
 
         sem_up(&s_buffer);
         sem_up(&s_item);
+        printf("%s produziu %d\n", (char*)arg, item);
     }
     task_exit(0);
 }
@@ -43,6 +43,7 @@ void consumidor (void *arg)
 {
     while(1){
         sem_down(&s_item);
+
         sem_down(&s_buffer);
         item = buffer[0];
 
@@ -53,10 +54,7 @@ void consumidor (void *arg)
 
         sem_up(&s_buffer);
         sem_up(&s_vaga);
-
-        if(item != -1)
-            printf("%s consumiu %d\n", (char*)arg, item);
-
+        printf("%s consumiu %d\n", (char*)arg, item);
         task_sleep(1);
     }
     task_exit(0);
@@ -79,16 +77,6 @@ int main (int argc, char *argv[])
     task_create(&cons1, consumidor, "                    c1");
     task_create(&cons2, consumidor, "                    c2");
 
-    task_join(&prod1);
-
-    sem_destroy(&s_buffer);
-    sem_destroy(&s_item);
-    sem_destroy(&s_vaga);
-
-    task_join(&prod2);
-    task_join(&prod3);
-    task_join(&cons1);
-    task_join(&cons2);
 
     printf("Main FIM\n");
     task_exit(0);

@@ -10,3 +10,6 @@ Falta:
 - Verificar existência de warnings em todos os programas
 - Verificar a corretude das funções do programa referente ao projeto p10.2
 - Mutex
+- Retorno 0, -1
+- Revisar os enunciados e o enunciado principal
+- Mensagens de erro

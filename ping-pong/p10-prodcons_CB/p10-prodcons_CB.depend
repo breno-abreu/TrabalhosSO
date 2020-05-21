@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1589323265 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p10-prodcons_CB/pingpong.c
+1590090689 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p10-prodcons_CB/pingpong.c
 	"pingpong.h"
 	<stdio.h>
 	<stdlib.h>
@@ -19,7 +19,7 @@
 	"queue.h"
 	<stdio.h>
 
-1589405392 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p10-prodcons_CB/pingpong-prodcons.c
+1590091107 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p10-prodcons_CB/pingpong-prodcons.c
 	<stdio.h>
 	<stdlib.h>
 	<time.h>
