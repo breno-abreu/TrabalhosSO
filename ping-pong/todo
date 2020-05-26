@@ -3,13 +3,16 @@ Falta:
 - Projetos: 11 e 12
 - Revisar os trabalhos, procurar por soluções melhores
 - Revisar os códigos de debugg
-- Revisar comentários; trocar 'prontos' por 'prontas'
+- Revisar comentários; trocar 'prontos' por 'prontas'; colocar mais espaços entre os comentários e o código
 - Decidir um padrão para o nome das variáveis (PT/EN)
 - Acertar o contador de tempo de execução
 - Recolocar o código de prioridade comentado nos projetos faltantes
 - Verificar existência de warnings em todos os programas
-- Verificar a corretude das funções do programa referente ao projeto p10.2
+- Verificar a corretude das funções do programa referente ao projeto p10.2;
+	é preciso encontrar uma forma melhor de habilitar/desabilitar as trocas de contexto
 - Mutex
 - Retorno 0, -1
 - Revisar os enunciados e o enunciado principal
 - Mensagens de erro
+- Malloc e Free
+- Mudar o array do 10.2

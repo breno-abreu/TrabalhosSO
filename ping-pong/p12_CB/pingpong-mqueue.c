@@ -25,6 +25,7 @@ void prodBody (void * saida)
       // envia o valor inteiro na fila de saida
       if (mqueue_send (&queueValores, &valor) < 0)
       {
+
          printf ("T%d terminou\n", task_id()) ;
          task_exit (0) ;
       }
@@ -118,7 +119,7 @@ int main (int argc, char *argv[])
    printf ("Main destroi queueRaizes\n") ;
    mqueue_destroy (&queueRaizes) ;
 
-   // encerra a thread main 
+   // encerra a thread main
    printf ("Main FIM\n") ;
    task_exit (0) ;
 

@@ -4,10 +4,12 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <string.h>
 #include "queue.h"
 
 #define STACKSIZE 32768
 #define QUANTUM 20
+#define N 5
 
 task_t MainTask;                            //Tarefa referente ao contexto da função main
 task_t *CurrentTask;                        //Variável que aponta para a tarefa que está em andamento
@@ -21,12 +23,13 @@ struct sigaction action;                    //Estrutura que define o tratador de
 struct itimerval timer;                     //Estrutura de inicialização do timer
 int contadorTimer;                          //Contador referente ao Quantum de cada tarefa
 unsigned int tempoAtual;                    //Conta o tempo de execução do programa em milisegundo
-int tempoAuxSegundos;
-int contTarefas;                            //Contador da quantidade total de tarefas que serão executadas, se chega a zero, o dispatcher para de executar
+int tempoAuxSegundos;                       //Contador de tempo em milisegundos que possibilita a contagem de segundos. Será resetado no dispatcher
+int trocaContexto;
 
 //Função que será ativada quando o temporizador chegar a um determinado tempo
 void tratador()
 {
+
     if(CurrentTask){
         CurrentTask->tempoProcessamento++;      //Tempo de processamento da tarefa atual é atualizado
 
@@ -43,13 +46,13 @@ void tratador()
         }
     }
     tempoAtual++;                           //Contador de tempo de execução é atualizado a cada 1 milisegundo
-    tempoAuxSegundos++;                     //Contador de tempo em milisegundos que possibilita a contagem de segundos. Será resetado no dispatcher
+    tempoAuxSegundos++;
 }
 
 //Retorna a próxima tarefa a ser executada
 task_t* scheduler()
 {
-    return readyQueue;                      //Retorna o primeiro elemento da fila de prontos
+    return readyQueue;                      //Retorna o primeiro elemento da fila de prontas
 }
 
 //Função recebida pelo dispatcher, irá executar as tarefas que estão na fila, enquanto houverem elementos
@@ -58,7 +61,6 @@ void dispatcher_body()
     task_t * next;
 
     while(1){
-
         //Caso haja elementos na fila de adormecidas e o contador auxiliar bata um segundo
         if(queue_size((queue_t*)sleepingQueue) > 0 && tempoAuxSegundos >= 1000){
             task_t *aux = sleepingQueue;
@@ -79,7 +81,8 @@ void dispatcher_body()
                         else
                             sleepingQueue = aux->next;
                     }
-                    task_resume(aux);       //Acorda a tarefa
+                    if(queue_size((queue_t*)readyQueue) == 0)
+                        task_resume(aux);       //Acorda a tarefa
                 }
                 aux = auxNext;
             }
@@ -94,11 +97,8 @@ void dispatcher_body()
                 task_switch(next);
         }
 
-        /*//Caso não haja elementos nem na fila de prontas nem da fila de adormecidas, encerra o laço
+        //Caso não haja elementos nem na fila de prontas nem da fila de adormecidas, encerra o laço
         if(queue_size((queue_t*)readyQueue) == 0 && queue_size((queue_t*)sleepingQueue) == 0)
-            break;*/
-
-        if(contTarefas <= 0)
             break;
 
     }
@@ -108,6 +108,8 @@ void dispatcher_body()
 //Inicializa algumas variáveis e desativa o buffer da saída padrão
 void pingpong_init()
 {
+    trocaContexto = 1;
+
     setvbuf (stdout, 0, _IONBF, 0);         //desativa o buffer da saida padrao (stdout), usado pela função printf
     readyQueue = NULL;
     sleepingQueue = NULL;
@@ -143,8 +145,6 @@ void pingpong_init()
         perror ("Erro em setitimer: ");
         exit (1);
     }
-
-    contTarefas = 1;
 
     task_yield();                           //Dispatcher é ativado
 }
@@ -199,8 +199,6 @@ int task_create( task_t *task,
     task->exitCode = 0;
     task->sleepTime = 0;
 
-    contTarefas++;
-
     return task->tid;
 }
 
@@ -227,8 +225,6 @@ void task_exit (int exitCode)
     #ifdef DEBUG
     printf("task_exit: tarefa %d sendo encerrada\n", CurrentTask->tid);
     #endif
-
-    contTarefas--;
 
     task_t *aux = CurrentTask->suspendedQueue;
 
@@ -301,13 +297,12 @@ void task_suspend (task_t *task, task_t **queue)
 
     aux->estado = SUSPENSA;                 //Troca o estado da tarefa para suspensa
     queue_remove((queue_t**) &readyQueue, (queue_t*) aux);  //Remove a tarefa da fila de prontas
-    queue_append((queue_t**) queue, (queue_t*) aux);        //Inseri a tarefa na fila recebida
+    queue_append((queue_t**) queue, (queue_t*) aux);        //Insere a tarefa na fila recebida
 }
 
 void task_resume (task_t *task)
 {
     if(task){
-
         task->estado = PRONTA;              //Troca o estado da tarefa para pronta
 
         //Retira a tarefa de sua fila atual
@@ -387,7 +382,7 @@ void task_sleep (int t)
 
 int sem_create (semaphore_t *s, int value)
 {
-    //Caso o semáforo 's' exista, receb o valor 'value' e inicia sua fila vazia
+    //Caso o semáforo 's' exista, recebe o valor 'value' e inicia sua fila vazia
     if(s){
         s->value = value;
         s->semQueue = NULL;
@@ -403,9 +398,7 @@ int sem_down (semaphore_t *s)
         //Caso 'value' seja menor que zero, retira a tarefa atual da lista de prontas e a coloca no final da fila do semáforo recebido...
         //...bloqueando a tarefa imediatamente e devolvendo o contexto para o dispatcher
         if(s->value < 0){
-            //task_t *aux = s->semQueue;
             task_suspend(NULL, &s->semQueue);
-            //s->semQueue = aux;
             task_yield();
         }
         return 0;
@@ -437,10 +430,11 @@ int sem_up (semaphore_t *s)
 int sem_destroy (semaphore_t *s)
 {
     //Caso o semáforo 's' exista e haja elementos em sua fila
-    if(s && s->semQueue){
+    if(s){
         task_t *aux = s->semQueue;
         task_t *auxNext;
         int tamanhoFila = queue_size((queue_t*)aux);
+
         //Percorre a fila acordando todas as tarefas
         for(int i = 0; i < tamanhoFila; i++){
             auxNext = aux->next;
@@ -450,78 +444,83 @@ int sem_destroy (semaphore_t *s)
         s->semQueue = NULL;
         s = NULL;
     }
-    else if(!s)
+    else
         return -1;
 
     return 0;
 }
 
-int barrier_create (barrier_t *b, int N)
+int mqueue_create (mqueue_t *queue, int max, int size)
 {
-    //Caso a barreira exista, e N seja maior que 0, inicializa a barreira com máximo de N elementos e com sua fila vazia
-    if(b && N > 0){
-        b->maxThreads = N;
-        b->barrierQueue = NULL;
+    if(queue && max > 0 && size >= 0){
+        queue->maxMsg = max;
+        queue->sizeMsg = size;
+        queue->quantidade = 0;
+        queue->msgQueue = malloc(max * size);
+        sem_create(&queue->buffer, 1);
+        sem_create(&queue->item, 0);
+        sem_create(&queue->vaga, N);
         return 0;
     }
     return -1;
 }
 
-int barrier_join (barrier_t *b)
+int mqueue_send (mqueue_t *queue, void *msg)
 {
-    if(b){
-        b->contThreads++;
-        //Caso não tenha atingido o número máximo de threads, a fila da barreira recebe mais uma tarefa, e muda a execução para o dispatcher
-        if(b->contThreads < b->maxThreads){
-            task_suspend(NULL, &b->barrierQueue);
-            task_yield();
-        }
-        //Caso tenha atingido o número máximo de threads, o contador da barreira é zerado e sua fila é liberada, voltando a executar as tarefas bloqueadas
-        else if(b->contThreads == b->maxThreads){
-            task_suspend(NULL, &b->barrierQueue);
-            b->contThreads = 0;
+    if(queue){
+        sem_down(&queue->vaga);
+        sem_down(&queue->buffer);
 
-            int tamanhoFila = queue_size((queue_t*)b->barrierQueue);
-            task_t* aux = b->barrierQueue;
-            task_t* auxNext;
-            //Percorre a fila acordando todas as tarefas
-            for(int i = 0; i < tamanhoFila; i++){
-                auxNext = aux->next;
-                task_resume(aux);
-                aux = auxNext;
-            }
+        if(queue->quantidade < N){
+            memcpy(&queue->msgQueue[queue->quantidade], msg, queue->sizeMsg);
+            queue->quantidade++;
         }
-        return 0;
-    }
-    else
-        return -1;
-}
 
-int barrier_destroy (barrier_t *b)
-{
-    if(b){
-        b->contThreads = 0;
-        int tamanhoFila = queue_size((queue_t*)b->barrierQueue);
-        task_t* aux = b->barrierQueue;
-        task_t* auxNext;
-        //Percorre a fila acordando todas as tarefas
-        for(int i = 0; i < tamanhoFila; i++){
-            auxNext = aux->next;
-            task_resume(aux);
-            aux = auxNext;
-        }
-        //A fila destruída
-        b->barrierQueue = NULL;
-        //A barreira é destruída
-        b = NULL;
+        sem_up(&queue->buffer);
+        sem_up(&queue->item);
         return 0;
     }
     return -1;
 }
 
+int mqueue_recv (mqueue_t *queue, void *msg)
+{
+    if(queue && msg){
+        sem_down(&queue->item);
+        sem_down(&queue->buffer);
 
+        memcpy(msg, &queue->msgQueue[0], queue->sizeMsg);
+        queue->quantidade--;
 
+        for(int i = 0; i < queue->quantidade; i++){
+            queue->msgQueue[i] = queue->msgQueue[i + 1];
+        }
 
+        sem_up(&queue->buffer);
+        sem_up(&queue->vaga);
+        return 0;
+    }
+    return -1;
+}
+
+int mqueue_destroy (mqueue_t *queue)
+{
+    if(queue){
+        queue->msgQueue = NULL;
+        sem_destroy(&queue->buffer);
+        sem_destroy(&queue->item);
+        sem_destroy(&queue->vaga);
+        queue = NULL;
+        free(queue);
+        return 0;
+    }
+    return -1;
+}
+
+int mqueue_msgs (mqueue_t *queue)
+{
+    return queue->quantidade;
+}
 
 
 

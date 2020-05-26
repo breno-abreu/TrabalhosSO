@@ -17,10 +17,10 @@ void produtor(void *arg)
 {
     while(1){
         task_sleep(1);
+        item = rand() % 100;
+
         sem_down(&s_vaga);
         sem_down(&s_buffer);
-
-        item = rand() % 100;
 
         int cont = 0;
         while(buffer[cont] != -1 && cont < 5){

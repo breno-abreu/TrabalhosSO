@@ -22,7 +22,7 @@ struct itimerval timer;                     //Estrutura de inicialização do ti
 int contadorTimer;                          //Contador referente ao Quantum de cada tarefa
 unsigned int tempoAtual;                    //Conta o tempo de execução do programa em milisegundo
 int tempoAuxSegundos;                       //Contador de tempo em milisegundos que possibilita a contagem de segundos. Será resetado no dispatcher
-int trocaContexto;
+int preempcao;
 
 //Função que será ativada quando o temporizador chegar a um determinado tempo
 void tratador()
@@ -38,7 +38,8 @@ void tratador()
             if(CurrentTask->contadorQuantum <= 0){
                 CurrentTask->contadorQuantum = CurrentTask->quantumEstatico;
                 tempoAtual++;
-                task_yield();
+                if(preempcao == 1)
+                    task_yield();
             }
             CurrentTask->contadorQuantum--;     //Decrementa o contador de quantum da tarefa atual
         }
@@ -79,7 +80,7 @@ void dispatcher_body()
                         else
                             sleepingQueue = aux->next;
                     }
-                    if(queue_size((queue_t*)readyQueue) == 0)
+                    //if(queue_size((queue_t*)readyQueue) == 0)
                         task_resume(aux);       //Acorda a tarefa
                 }
                 aux = auxNext;
@@ -106,7 +107,7 @@ void dispatcher_body()
 //Inicializa algumas variáveis e desativa o buffer da saída padrão
 void pingpong_init()
 {
-    trocaContexto = 1;
+    preempcao = 1;
 
     setvbuf (stdout, 0, _IONBF, 0);         //desativa o buffer da saida padrao (stdout), usado pela função printf
     readyQueue = NULL;

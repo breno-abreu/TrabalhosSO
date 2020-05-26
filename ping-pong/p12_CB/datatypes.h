@@ -60,6 +60,11 @@ typedef struct
 {
     int maxMsg;                       //Quantidade máxima de mensagens
     int sizeMsg;                      //Tamanho máximo, em bytes, de cada mensagem
+    int quantidade;
+    void **msgQueue;
+    semaphore_t vaga;
+    semaphore_t buffer;
+    semaphore_t item;
 } mqueue_t ;
 
 #endif
