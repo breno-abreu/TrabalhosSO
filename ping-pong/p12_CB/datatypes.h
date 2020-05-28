@@ -32,6 +32,10 @@ typedef struct task_t
    struct task_t *suspendedQueue;   //Fila de tarefas suspendidas por uma tarefa
    int exitCode;                    //Código de finalização da tarefa recebido na função task_exit(exitCode)
    int sleepTime;                   //Quantidade de tempo em segundos em que a tarefa ficara adormecida
+
+   int aux;
+
+
 } task_t ;
 
 // estrutura que define um semáforo
@@ -39,6 +43,7 @@ typedef struct
 {
     int value;                        //Contador de tarefas na fila
     struct task_t *semQueue;          //Fila de tarefas de um semáforo
+    int ativado;
 } semaphore_t ;
 
 // estrutura que define um mutex
@@ -65,6 +70,7 @@ typedef struct
     semaphore_t vaga;
     semaphore_t buffer;
     semaphore_t item;
+    int ativado;
 } mqueue_t ;
 
 #endif

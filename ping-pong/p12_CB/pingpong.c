@@ -29,10 +29,8 @@ int trocaContexto;
 //Função que será ativada quando o temporizador chegar a um determinado tempo
 void tratador()
 {
-
     if(CurrentTask){
         CurrentTask->tempoProcessamento++;      //Tempo de processamento da tarefa atual é atualizado
-
         //Caso seja uma tarefa de usuário
         if(CurrentTask->tipoTarefa == USUARIO){
             //Caso o quantum chegue a zero, seu quantum é atualizado para o valor de quantum predefinido, ...
@@ -62,10 +60,12 @@ void dispatcher_body()
 
     while(1){
         //Caso haja elementos na fila de adormecidas e o contador auxiliar bata um segundo
+
         if(queue_size((queue_t*)sleepingQueue) > 0 && tempoAuxSegundos >= 1000){
             task_t *aux = sleepingQueue;
             task_t *auxNext;
             int tamanhoFila = queue_size((queue_t*)sleepingQueue);
+
             //Percorre a lista de adormecidas
             for(int i = 0; i < tamanhoFila; i++){
                 auxNext = aux->next;
@@ -81,13 +81,44 @@ void dispatcher_body()
                         else
                             sleepingQueue = aux->next;
                     }
-                    if(queue_size((queue_t*)readyQueue) == 0)
+                    aux->aux = 1;
+                    //if(queue_size((queue_t*)readyQueue) == 0){
                         task_resume(aux);       //Acorda a tarefa
+                        aux->aux = 0;
+                    //}
                 }
                 aux = auxNext;
             }
             tempoAuxSegundos = 0;           //Reseta a variável tempoAuxSegundos
         }
+
+
+
+        /*if(queue_size((queue_t*)sleepingQueue) > 0){
+            task_t *aux = sleepingQueue;
+            task_t *auxNext;
+            int tamanhoFila = queue_size((queue_t*)sleepingQueue);
+
+            //Percorre a lista de adormecidas
+            for(int i = 0; i < tamanhoFila; i++){
+                auxNext = aux->next;
+                if(aux->aux == 1 && queue_size((queue_t*)readyQueue) == 0){
+                    aux->aux = 0;
+
+                    if(aux == sleepingQueue){
+                        //Caso haja apenas um elemento na fila, o inicio da fila aponta para nulo
+                        if(aux->next == aux)
+                            sleepingQueue = NULL;
+                        //Caso haja mais de um elemento, o inicio da fila aponta para o próximo elemento de aux
+                        else
+                            sleepingQueue = aux->next;
+                    }
+                    task_resume(aux);
+                }
+                aux = auxNext;
+            }
+        }*/
+
 
         //Enquanto há elementos na fila de prontos continua executando as tarefas
         if(queue_size((queue_t*)readyQueue) > 0){
@@ -386,6 +417,7 @@ int sem_create (semaphore_t *s, int value)
     if(s){
         s->value = value;
         s->semQueue = NULL;
+        s->ativado = 1;
         return 0;
     }
     return -1;
@@ -393,7 +425,7 @@ int sem_create (semaphore_t *s, int value)
 
 int sem_down (semaphore_t *s)
 {
-    if(s){
+    if(s->ativado == 1){
         s->value--;
         //Caso 'value' seja menor que zero, retira a tarefa atual da lista de prontas e a coloca no final da fila do semáforo recebido...
         //...bloqueando a tarefa imediatamente e devolvendo o contexto para o dispatcher
@@ -401,14 +433,17 @@ int sem_down (semaphore_t *s)
             task_suspend(NULL, &s->semQueue);
             task_yield();
         }
-        return 0;
     }
-    return -1;
+
+    if(s->ativado == 1)
+        return 0;
+    else
+        return -1;
 }
 
 int sem_up (semaphore_t *s)
 {
-    if(s){
+    if(s->ativado == 1){
         s->value++;
         //Se existir elementos na fila, e 'value' for menor ou igual a zero, acorda o primeiro elemento da fila do semáforo...
         //...e não bloqueia a tarefa atual
@@ -422,9 +457,11 @@ int sem_up (semaphore_t *s)
 
             task_resume(aux);
         }
-        return 0;
     }
-    return -1;
+    if(s->ativado == 1)
+        return 0;
+    else
+        return -1;
 }
 
 int sem_destroy (semaphore_t *s)
@@ -441,13 +478,14 @@ int sem_destroy (semaphore_t *s)
             task_resume(aux);
             aux = auxNext;
         }
-        s->semQueue = NULL;
-        s = NULL;
-    }
-    else
-        return -1;
+        //s->semQueue = NULL;
+        //s = NULL;
+        s->ativado = 0;
 
-    return 0;
+
+        return 0;
+    }
+    return -1;
 }
 
 int mqueue_create (mqueue_t *queue, int max, int size)
@@ -460,6 +498,7 @@ int mqueue_create (mqueue_t *queue, int max, int size)
         sem_create(&queue->buffer, 1);
         sem_create(&queue->item, 0);
         sem_create(&queue->vaga, N);
+        queue->ativado = 1;
         return 0;
     }
     return -1;
@@ -467,7 +506,7 @@ int mqueue_create (mqueue_t *queue, int max, int size)
 
 int mqueue_send (mqueue_t *queue, void *msg)
 {
-    if(queue){
+    if(queue->ativado == 1){
         sem_down(&queue->vaga);
         sem_down(&queue->buffer);
 
@@ -478,14 +517,17 @@ int mqueue_send (mqueue_t *queue, void *msg)
 
         sem_up(&queue->buffer);
         sem_up(&queue->item);
-        return 0;
     }
-    return -1;
+
+    if(queue->ativado == 1)
+        return 0;
+    else
+        return -1;
 }
 
 int mqueue_recv (mqueue_t *queue, void *msg)
 {
-    if(queue && msg){
+    if(queue->ativado == 1){
         sem_down(&queue->item);
         sem_down(&queue->buffer);
 
@@ -498,20 +540,25 @@ int mqueue_recv (mqueue_t *queue, void *msg)
 
         sem_up(&queue->buffer);
         sem_up(&queue->vaga);
-        return 0;
     }
-    return -1;
+
+    if(queue->ativado == 1)
+        return 0;
+    else
+        return -1;
 }
 
 int mqueue_destroy (mqueue_t *queue)
 {
-    if(queue){
-        queue->msgQueue = NULL;
+    if(queue->ativado == 1){
+        //queue->msgQueue = NULL;
         sem_destroy(&queue->buffer);
         sem_destroy(&queue->item);
         sem_destroy(&queue->vaga);
-        queue = NULL;
-        free(queue);
+        queue->ativado = 0;
+        //queue = NULL;
+        //free(queue);
+
         return 0;
     }
     return -1;

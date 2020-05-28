@@ -27,10 +27,8 @@ int preempcao;
 //Função que será ativada quando o temporizador chegar a um determinado tempo
 void tratador()
 {
-
     if(CurrentTask){
         CurrentTask->tempoProcessamento++;      //Tempo de processamento da tarefa atual é atualizado
-
         //Caso seja uma tarefa de usuário
         if(CurrentTask->tipoTarefa == USUARIO){
             //Caso o quantum chegue a zero, seu quantum é atualizado para o valor de quantum predefinido, ...
@@ -38,8 +36,7 @@ void tratador()
             if(CurrentTask->contadorQuantum <= 0){
                 CurrentTask->contadorQuantum = CurrentTask->quantumEstatico;
                 tempoAtual++;
-                if(preempcao == 1)
-                    task_yield();
+                task_yield();
             }
             CurrentTask->contadorQuantum--;     //Decrementa o contador de quantum da tarefa atual
         }
@@ -61,10 +58,12 @@ void dispatcher_body()
 
     while(1){
         //Caso haja elementos na fila de adormecidas e o contador auxiliar bata um segundo
+
         if(queue_size((queue_t*)sleepingQueue) > 0 && tempoAuxSegundos >= 1000){
             task_t *aux = sleepingQueue;
             task_t *auxNext;
             int tamanhoFila = queue_size((queue_t*)sleepingQueue);
+
             //Percorre a lista de adormecidas
             for(int i = 0; i < tamanhoFila; i++){
                 auxNext = aux->next;
@@ -80,16 +79,47 @@ void dispatcher_body()
                         else
                             sleepingQueue = aux->next;
                     }
-                    //if(queue_size((queue_t*)readyQueue) == 0)
+                    aux->aux = 1;
+                    if(queue_size((queue_t*)readyQueue) == 0){
                         task_resume(aux);       //Acorda a tarefa
+                        aux->aux = 0;
+                    }
+
                 }
                 aux = auxNext;
             }
             tempoAuxSegundos = 0;           //Reseta a variável tempoAuxSegundos
         }
 
+
+
+        if(queue_size((queue_t*)sleepingQueue) > 0){
+            task_t *aux = sleepingQueue;
+            task_t *auxNext;
+            int tamanhoFila = queue_size((queue_t*)sleepingQueue);
+
+            //Percorre a lista de adormecidas
+            for(int i = 0; i < tamanhoFila; i++){
+                auxNext = aux->next;
+                if(aux->aux == 1 && queue_size((queue_t*)readyQueue) == 0){
+                    aux->aux = 0;
+
+                    if(aux == sleepingQueue){
+                        //Caso haja apenas um elemento na fila, o inicio da fila aponta para nulo
+                        if(aux->next == aux)
+                            sleepingQueue = NULL;
+                        //Caso haja mais de um elemento, o inicio da fila aponta para o próximo elemento de aux
+                        else
+                            sleepingQueue = aux->next;
+                    }
+                    task_resume(aux);
+                }
+                aux = auxNext;
+            }
+        }
+
         //Enquanto há elementos na fila de prontos continua executando as tarefas
-        if(queue_size((queue_t*)readyQueue) > 0){
+        if(queue_size((queue_t*)readyQueue) > 0 && preempcao == 1){
             next = scheduler();                 //next recebe a próxima tarefa a ser executada
             next->ativacoes++;                  //Atualiza a quantidade de ativações da tarefa a ser executada
             if(next)
@@ -99,7 +129,6 @@ void dispatcher_body()
         //Caso não haja elementos nem na fila de prontas nem da fila de adormecidas, encerra o laço
         if(queue_size((queue_t*)readyQueue) == 0 && queue_size((queue_t*)sleepingQueue) == 0)
             break;
-
     }
     task_exit(0);                           //Após executar todas as tarefas, retorna para o contexto da função main ou para o dispatcher
 }
@@ -197,6 +226,8 @@ int task_create( task_t *task,
     task->suspendedQueue = NULL;
     task->exitCode = 0;
     task->sleepTime = 0;
+
+    task->aux = 0;
 
     return task->tid;
 }
@@ -359,9 +390,7 @@ int task_join (task_t *task)
     //Caso a tarefa recebida e exista e ainda estiver ativa, suspende a tarefa atual, inseri-a na fila de suspensas...
     //...e ativa o dispatcher
     if(task && task->estado != FINALIZADA){
-        //task_t *aux = task->suspendedQueue;
         task_suspend(NULL, &task->suspendedQueue);
-        //task->suspendedQueue = aux;
         task_yield();
         return task->exitCode;
     }
@@ -381,7 +410,7 @@ void task_sleep (int t)
 
 int sem_create (semaphore_t *s, int value)
 {
-    //Caso o semáforo 's' exista, recebe o valor 'value' e inicia sua fila vazia
+    //Caso o semáforo 's' exista, recebe o valor 'value' e inicializa sua fila vazia
     if(s){
         s->value = value;
         s->semQueue = NULL;
@@ -411,7 +440,7 @@ int sem_up (semaphore_t *s)
         s->value++;
         //Se existir elementos na fila, e 'value' for menor ou igual a zero, acorda o primeiro elemento da fila do semáforo...
         //...e não bloqueia a tarefa atual
-        if(s->value <= 0 && s->semQueue){
+        if(s->value <= 0){
             task_t* aux = s->semQueue;
 
             if(aux->next != aux)
@@ -433,6 +462,7 @@ int sem_destroy (semaphore_t *s)
         task_t *aux = s->semQueue;
         task_t *auxNext;
         int tamanhoFila = queue_size((queue_t*)aux);
+
         //Percorre a fila acordando todas as tarefas
         for(int i = 0; i < tamanhoFila; i++){
             auxNext = aux->next;

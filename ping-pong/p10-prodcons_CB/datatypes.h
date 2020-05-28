@@ -32,6 +32,8 @@ typedef struct task_t
    struct task_t *suspendedQueue;   //Fila de tarefas suspendidas por uma tarefa
    int exitCode;                    //Código de finalização da tarefa recebido na função task_exit(exitCode)
    int sleepTime;                   //Quantidade de tempo em segundos em que a tarefa ficara adormecida
+
+   int aux;
 } task_t ;
 
 // estrutura que define um semáforo

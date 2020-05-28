@@ -24,7 +24,7 @@ unsigned int tempoAtual;                    //Conta o tempo de execução do pro
 //Função que será ativada quando o temporizador chegar a um determinado tempo
 void tratador()
 {
-    
+
     CurrentTask->tempoProcessamento++;      //Tempo de processamento da tarefa atual é atualizado
 
     //Caso seja uma tarefa de usuário
@@ -33,6 +33,7 @@ void tratador()
         //...,a tarefa é adicionada ao final da fila de prontos e o contexto é mudado para o dispatcher
         if(CurrentTask->contadorQuantum <= 0){
             CurrentTask->contadorQuantum = QUANTUM;
+            printf("::::aqui\n");
             task_yield();
         }
         CurrentTask->contadorQuantum--;     //Decrementa o contador de quantum da tarefa atual

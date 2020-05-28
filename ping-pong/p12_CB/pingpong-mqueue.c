@@ -25,11 +25,9 @@ void prodBody (void * saida)
       // envia o valor inteiro na fila de saida
       if (mqueue_send (&queueValores, &valor) < 0)
       {
-
          printf ("T%d terminou\n", task_id()) ;
          task_exit (0) ;
       }
-
       printf ("T%d enviou %d\n", task_id(), valor) ;
 
       // dorme um intervalo aleatorio
