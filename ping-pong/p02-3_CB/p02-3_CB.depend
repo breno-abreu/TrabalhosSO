@@ -7,6 +7,11 @@
 1428415330 /home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p02-3_CB/pingpong.h
 	"datatypes.h"
 
-1588277573 /home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p02-3_CB/datatypes.h
+1590775780 /home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p02-3_CB/datatypes.h
 	<ucontext.h>
+
+1590775943 source:/home/breno/Downloads/SO/Trabalhos_SO/ping-pong/p02-3_CB/pingpong.c
+	"pingpong.h"
+	<stdio.h>
+	<stdlib.h>
 

@@ -5,20 +5,19 @@
 
 #define STACKSIZE 32768
 
-//Tarefa referente ao contexto da função main
-task_t MainTask;
-//Variável que aponta para a tarefa que está em andamento
-task_t *CurrentTask;
-//Variável que será utilizada para inicializar o campo 'tid' da struct 'task_t'...
-//...tornando possível que cada tarefa tenha um identificador diferente.
-int contador = 0;
 
-//Inicializa algumas variáveis e desativa o buffer da saída padrão
+task_t MainTask;            /*Tarefa referente ao contexto da função main*/
+task_t *CurrentTask;        /*Variável que aponta para a tarefa que está em andamento*/
+int contador = 0;           /*Variável que será utilizada para inicializar o campo 'tid' da struct 'task_t'...
+                            ...tornando possível que cada tarefa tenha um identificador único.*/
+
+/*Inicializa algumas variáveis e desativa o buffer da saída padrão*/
 void pingpong_init()
 {
-    //desativa o buffer da saida padrao (stdout), usado pela função printf
+    /*desativa o buffer da saida padrao (stdout), usado pela função printf*/
     setvbuf (stdout, 0, _IONBF, 0);
-    //Inicialmente a tarefa atuar será a relacionada a função main
+
+    /*Inicialmente a tarefa atual será a função main*/
     CurrentTask = &MainTask;
     MainTask.tid = 0;
 }
@@ -30,11 +29,12 @@ int task_create( task_t *task,
 
     char *stack;
     contador++;
-    //Inicializa o contexto de uma tarefa
+
+    /*Inicializa o contexto de uma tarefa*/
     if(getcontext(&task->context) < 0)
         return -1;
 
-    //Preenche os campos necessários do contexto antes de chamar a função 'makecontext()'
+    /*Preenche os campos necessários do contexto antes de chamar a função 'makecontext()'*/
     stack = malloc(STACKSIZE);
     if(stack){
         task->context.uc_stack.ss_sp = stack;
@@ -46,12 +46,13 @@ int task_create( task_t *task,
         perror ("Erro na criação da pilha: ");
         return -1;
     }
-    //Relaciona a função 'start_func' com o contexto em questão
+
+    /*Relaciona a função 'start_func' com o contexto em questão*/
     makecontext(&task->context, (void*)start_func, 1, (char*) arg);
-    //Dá a tarefa um identificador único
+
+    /*Dá a tarefa um identificador único*/
     task->tid = contador;
 
-    //Código para depuração caso DEBUG esteja definido
     #ifdef DEBUG
     printf("task_create: criou tarefa %d\n", task->tid);
     #endif
@@ -61,14 +62,14 @@ int task_create( task_t *task,
 
 int task_switch (task_t *task)
 {
-    //O ponteiro 'CurrentTask' aponta para a tarefa recebida
+    /*O ponteiro 'CurrentTask' aponta para a tarefa recebida*/
     task_t *Aux = CurrentTask;
     CurrentTask = task;
-    //Salva o contexto da tarefa anterior e aciona o contexto da tarefa recebida
+
+    /*Salva o contexto da tarefa anterior e aciona o contexto da tarefa recebida*/
     if(swapcontext(&Aux->context, &task->context) < 0)
         return -1;
 
-    //Código para depuração caso DEBUG esteja definido
     #ifdef DEBUG
     printf("task_switch: trocando contexto %d -> %d\n", Aux->tid, task->tid);
     #endif
@@ -78,18 +79,17 @@ int task_switch (task_t *task)
 
 void task_exit (int exitCode)
 {
-    //Finaliza a tarefa atual retornando para a função main
-    task_switch(&MainTask);
-
-    //Código para depuração caso DEBUG esteja definido
     #ifdef DEBUG
-    printf("task_exit: tarefa %d sendo encerrada", CurrentTask->tid);
+    printf("task_exit: tarefa %d sendo encerrada\n", CurrentTask->tid);
     #endif
+
+    /*Finaliza a tarefa atual retornando para a função main*/
+    task_switch(&MainTask);
 }
 
 int task_id ()
 {
-    //Retorna o identificador da tarefa que está em andamento
+    /*Retorna o identificador da tarefa que está em andamento*/
     return CurrentTask->tid;
 }
 

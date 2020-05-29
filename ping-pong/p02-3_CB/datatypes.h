@@ -11,10 +11,9 @@
 // Estrutura que define uma tarefa
 typedef struct task_t
 {
-  // preencher quando necessário
-    struct task_t *prev, *next;
-    int tid;
-    ucontext_t context;
+    struct task_t *prev, *next;     /*Ponteiro para a tarefa anterior e posterior de uma tarefa*/
+    int tid;                        /*Variável identificadora de uma tarefa*/
+    ucontext_t context;             /*Contexto de uma tarefa*/
 } task_t ;
 
 // estrutura que define um semáforo

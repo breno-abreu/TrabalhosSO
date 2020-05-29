@@ -4,7 +4,6 @@ Falta:
 - Revisar os trabalhos, procurar por soluções melhores
 - Revisar os códigos de debugg
 - Revisar comentários; trocar 'prontos' por 'prontas'; colocar mais espaços entre os comentários e o código
-- Decidir um padrão para o nome das variáveis (PT/EN)
 - Acertar o contador de tempo de execução
 - Recolocar o código de prioridade comentado nos projetos faltantes
 - Verificar existência de warnings em todos os programas
@@ -33,8 +32,9 @@ X - Projeto não iniciado
 
 Projeto		Status
 
-1 		#
-2 		#
+0		<<
+1 		<<
+2 		<<
 3 		#
 4		#
 5		#
