@@ -11,13 +11,13 @@
 // Estrutura que define uma tarefa
 typedef struct task_t
 {
-   struct task_t *prev, *next;
-   int tid; //Identificador da tarefa
-   ucontext_t context; //Contexto da tarefa
-   int prioridadeEstatica; //Prioridade estatica da tarefa, usada para o escalonamento
-   int prioridadeDinamica; //Prioridade dinamica da tarefa, usada para o escalonamento
-   int contadorQuantum;//Contador de quantum
-   int tarefaUsuario;//Define se é uma tarefa de sistema (0) ou tarefa de usuário (1)
+   struct task_t *prev, *next;      /*Ponteiro para a tarefa anterior e posterior de uma tarefa*/
+   int tid;                         /*Identificador da tarefa*/
+   ucontext_t context;              /*Contexto da tarefa*/
+   int prioridadeEstatica;          /*Prioridade estatica da tarefa, usada para o escalonamento*/
+   int prioridadeDinamica;          /*Prioridade dinamica da tarefa, usada para o escalonamento*/
+   int contadorQuantum;             /*Contador de quantum*/
+   int tarefaUsuario;               /*Define se é uma tarefa de sistema (0) ou tarefa de usuário (1)*/
 } task_t ;
 
 // estrutura que define um semáforo
