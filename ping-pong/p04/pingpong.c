@@ -126,7 +126,7 @@ int task_create( task_t *task,
     printf("task_create: criou tarefa %d\n", task->tid);
     #endif
 
-    /*Inclui tarefas novas na lista de prontos, a menos que a tarefa seja o dispatcher*/
+    /*Inclui tarefas novas na lista de prontas, a menos que a tarefa seja o dispatcher*/
     if(task != &dispatcher)
         queue_append((queue_t**) &readyQueue, (queue_t*) task);
 
@@ -201,7 +201,7 @@ void task_suspend (task_t *task, task_t **queue)
             aux->prev->next = aux->next;
             aux->next->prev = aux->prev;
         }
-        /*Adiciona o nó na fila de prontos*/
+        /*Adiciona o nó na fila de prontas*/
         queue_append((queue_t**) &queue, aux);
     }
 }
@@ -215,7 +215,7 @@ void task_resume (task_t *task)
         aux->prev->next = aux->next;
         aux->next->prev = aux->prev;
     }
-    /*Adiciona o nó na fila de prontos*/
+    /*Adiciona o nó na fila de prontas*/
     queue_append((queue_t**) &readyQueue, aux);
 }
 
