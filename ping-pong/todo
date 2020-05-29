@@ -1,6 +1,6 @@
 Falta:
 
-- Projetos: 11 e 12
+- Projetos: 10 e 12
 - Revisar os trabalhos, procurar por soluções melhores
 - Revisar os códigos de debugg
 - Revisar comentários; trocar 'prontos' por 'prontas'; colocar mais espaços entre os comentários e o código
@@ -18,3 +18,35 @@ Falta:
 - Mudar o array do 10.2
 - Mudar a variável 'aux' no datatypes do prjeto 12
 - Trocar ints por char
+
+- COLOCAR O NOME DOS INTEGRANTES, E UMA INTRODUÇÃO PARA O PROJETO
+
+
+
+Legenda:
+
+<< - Projeto pronto e revisado
+# - Projeto pronto mas não revisado
+! - Projeto iniciado mas não finalizado ou iniciado e contendo erros
+X - Projeto não iniciado
+
+
+Projeto		Status
+
+1 		#
+2 		#
+3 		#
+4		#
+5		#
+6		#
+7		#
+8		#
+9		#
+10		!
+11		#
+12		!
+	
+13		X
+14		X
+
+
