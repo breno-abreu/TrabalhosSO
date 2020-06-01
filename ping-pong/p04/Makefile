@@ -6,7 +6,7 @@ p04: pingpong.o pingpong-scheduler.o queue.o
 pingpong.o: pingpong.c
 	gcc -c pingpong.c
 
-pingpong-dispatcher.o: pingpong-scheduler.c
+pingpong-scheduler.o: pingpong-scheduler.c
 	gcc -c pingpong-scheduler.c
 
 queue.o: queue.c

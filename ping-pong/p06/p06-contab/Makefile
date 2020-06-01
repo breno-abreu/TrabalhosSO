@@ -6,8 +6,8 @@ p06: pingpong.o pingpong-contab.o queue.o
 pingpong.o: pingpong.c
 	gcc -c pingpong.c
 
-pingpong-dispatcher.o: pingpong-contab.o 
-	gcc -c pingpong-contab.o
+pingpong-contab.o: pingpong-contab.c 
+	gcc -c pingpong-contab.c
 
 queue.o: queue.c
 	gcc -c queue.c
