@@ -2,7 +2,7 @@ Falta:
 
 - Projetos: 10 e 12
 - Revisar os trabalhos, procurar por soluções melhores
-- Acertar o contador de tempo de execução
+- Acertar o algoritmo para adormecer tarefas
 - Recolocar o código de prioridade comentado nos projetos faltantes
 - Verificar a corretude das funções do programa referente ao projeto p10.2;
 	é preciso encontrar uma forma melhor de habilitar/desabilitar as trocas de contexto
@@ -13,7 +13,6 @@ Falta:
 - Malloc e Free
 - Mudar o array do 10.2
 - Mudar a variável 'aux' no datatypes do prjeto 12
-- Trocar ints por char
 
 
 - COLOCAR O NOME DOS INTEGRANTES, E UMA INTRODUÇÃO PARA O PROJETO
@@ -47,7 +46,7 @@ Projeto		Status
 6		<<
 7		<<
 8		<<
-9		#
+9		<<
 10		!
 11		#
 12		!

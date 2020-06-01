@@ -1,6 +1,6 @@
     0 ms: Main INICIO
     7 ms: Main espera Pang...
-   11 ms:     Pang 0 (dorme 3 s)
+   11 ms:     Pang 0 (dorme 3 s)	
    15 ms:         Peng 0 (dorme 1 s)
    16 ms:             Ping 0 (dorme 2 s)
    17 ms:                 Pong 0 (dorme 0 s)

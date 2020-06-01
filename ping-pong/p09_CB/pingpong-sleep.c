@@ -37,6 +37,7 @@ int main (int argc, char *argv[])
    task_create (&Pong, Body, "                Pong") ;
    task_create (&Pung, Body, "                    Pung") ;
 
+
    printf ("%5d ms: Main espera Pang...\n", systime()) ;
    task_join (&Pang) ;
    printf ("%5d ms: Pang acabou\n", systime()) ;
