@@ -31,7 +31,7 @@ void tratador()
     if(CurrentTask->tarefaUsuario == 1){
 
         /*Caso o quantum chegue a zero, seu quantum é atualizado para o valor de quantum predefinido, ...
-        ...,a tarefa é adicionada ao final da fila de prontos e o contexto é mudado para o dispatcher*/
+        ...,a tarefa é adicionada ao final da fila de prontas e o contexto é mudado para o dispatcher*/
         if(CurrentTask->contadorQuantum <= 0){
             CurrentTask->contadorQuantum = CurrentTask->quantumEstatico;
             task_yield();
@@ -54,7 +54,7 @@ void dispatcher_body()
 {
     task_t * next;
 
-    /*Enquanto há elementos na fila de prontos continua executando as tarefas*/
+    /*Enquanto há elementos na fila de prontas continua executando as tarefas*/
     while(queue_size((queue_t*)readyQueue) > 0){
         next = scheduler();                 /*next recebe a próxima tarefa a ser executada*/
         next->ativacoes++;                  /*Atualiza a quantidade de ativações da tarefa a ser executada*/
@@ -197,7 +197,7 @@ void task_exit (int exitCode)
     printf("task_exit: tarefa %d sendo encerrada\n", CurrentTask->tid);
     #endif
 
-    /*Caso a tarefa atual não seja o dispatcher, remove a tarefa atual da fila de prontos e...
+    /*Caso a tarefa atual não seja o dispatcher, remove a tarefa atual da fila de prontas e...
     ...troca para a tarefa dispatcher*/
     if(CurrentTask != &dispatcher){
         queue_remove((queue_t**) &readyQueue, (queue_t*) CurrentTask);
@@ -250,7 +250,7 @@ void task_suspend (task_t *task, task_t **queue)
             aux->next->prev = aux->prev;
         }
 
-        /*Adiciona o nó na fila de prontos*/
+        /*Adiciona o nó na fila de prontas*/
         queue_append((queue_t**) &queue, aux);
     }
 }
@@ -265,7 +265,7 @@ void task_resume (task_t *task)
         aux->next->prev = aux->prev;
     }
 
-    /*Adiciona o nó na fila de prontos*/
+    /*Adiciona o nó na fila de prontas*/
     queue_append((queue_t**) &readyQueue, aux);
 }
 
