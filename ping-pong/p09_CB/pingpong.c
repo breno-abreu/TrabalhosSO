@@ -66,10 +66,12 @@ void dispatcher_body()
     while(1){
 
         /*Caso haja elementos na fila de adormecidas e o contador auxiliar bata um segundo*/
-        if(queue_size((queue_t*)sleepingQueue) > 0 && tempoAuxSegundos >= 1000){
+        if(queue_size((queue_t*)sleepingQueue) > 0 && tempoAuxSegundos >= 1){
             task_t *aux = sleepingQueue;
             task_t *auxNext;
             int tamanhoFila = queue_size((queue_t*)sleepingQueue);
+
+            int aux2 = 0;
 
             /*Percorre a lista de adormecidas*/
             for(int i = 0; i < tamanhoFila; i++){
@@ -79,7 +81,7 @@ void dispatcher_body()
                 aux->sleepTime--;
 
                 /*Caso o tempo seja 0, acorda a tarefa, inserindo-a na fila de prontas*/
-                if(aux->sleepTime <= 0){
+                if(aux->sleepTime <= 0 && aux2 == 0){
 
                     /*Caso o ponteiro aux aponte para o inicio da fila*/
                     if(aux == sleepingQueue){
@@ -94,6 +96,8 @@ void dispatcher_body()
                     }
                     /*Acorda a tarefa*/
                     task_resume(aux);
+
+                    aux2 = 1;
                 }
                 aux = auxNext;
             }
@@ -408,7 +412,7 @@ void task_sleep (int t)
     /*Caso o tempo recebido seja maior que zero, atualiza a variável sleepTime da tarefa atual, retira-a da fila de prontas...
     ...e a coloca na fila de adormecidas.*/
     if(t > 0){
-        CurrentTask->sleepTime = t;
+        CurrentTask->sleepTime = t * 1000;
         task_suspend(NULL, &sleepingQueue);
     }
     task_yield();

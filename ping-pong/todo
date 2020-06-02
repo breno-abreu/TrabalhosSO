@@ -5,7 +5,8 @@ Falta:
 - Acertar o algoritmo para adormecer tarefas
 - Recolocar o código de prioridade comentado nos projetos faltantes
 - Verificar a corretude das funções do programa referente ao projeto p10.2;
-	é preciso encontrar uma forma melhor de habilitar/desabilitar as trocas de contexto
+	é preciso encontrar uma forma melhor de habilitar/desabilitar as trocas de contexto;
+	...RETIRAR PREEMPÇÃO POR TEMPO, APENAS USAR SEMÁFOROS, ver final no pdf do projeto p11
 - Mutex
 
 - Revisar os enunciados e o enunciado principal
@@ -13,6 +14,7 @@ Falta:
 - Malloc e Free
 - Mudar o array do 10.2
 - Mudar a variável 'aux' no datatypes do prjeto 12
+- int por char
 
 
 - COLOCAR O NOME DOS INTEGRANTES, E UMA INTRODUÇÃO PARA O PROJETO
@@ -26,6 +28,7 @@ REVISAR:
 - Prontos por prontas
 - Makefile
 - Retorno 0, -1
+- Inseri por insere
 
 
 Legenda:
@@ -54,5 +57,4 @@ Projeto		Status
 	
 13		X
 14		X
-
 

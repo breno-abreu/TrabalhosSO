@@ -13,6 +13,8 @@
 #define SISTEMA 3
 #define ADORMECIDA 4
 #define FINALIZADA 5
+#define LIBERADA 6
+#define TRAVADA 7
 
 // Estrutura que define uma tarefa
 typedef struct task_t
@@ -39,6 +41,8 @@ typedef struct
 {
   int value;                        //Contador de tarefas na fila
   struct task_t *semQueue;          //Fila de tarefas de um semáforo
+  int ativado;
+  int lock;
 } semaphore_t ;
 
 // estrutura que define um mutex

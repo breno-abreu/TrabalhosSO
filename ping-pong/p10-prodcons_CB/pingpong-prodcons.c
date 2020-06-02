@@ -9,7 +9,9 @@
 #endif
 
 task_t prod1, prod2, prod3, cons1, cons2;
-semaphore_t s_buffer, s_item, s_vaga;
+semaphore_t s_item, s_vaga;
+mutex_t m_buffer;
+
 int item;
 int buffer[5] = {-1, -1, -1, -1, -1};
 
@@ -20,7 +22,11 @@ void produtor(void *arg)
         item = rand() % 100;
 
         sem_down(&s_vaga);
-        sem_down(&s_buffer);
+
+        //sem_down(&s_buffer);
+        mutex_lock(&m_buffer);
+
+
 
         int cont = 0;
         while(buffer[cont] != -1 && cont < 5){
@@ -29,10 +35,13 @@ void produtor(void *arg)
 
         if(cont < 5){
             buffer[cont] = item;
-
         }
 
-        sem_up(&s_buffer);
+
+
+        //sem_up(&s_buffer);
+        mutex_unlock(&m_buffer);
+
         sem_up(&s_item);
         printf("%s produziu %d\n", (char*)arg, item);
     }
@@ -44,7 +53,9 @@ void consumidor (void *arg)
     while(1){
         sem_down(&s_item);
 
-        sem_down(&s_buffer);
+        //sem_down(&s_buffer);
+        mutex_lock(&m_buffer);
+
         item = buffer[0];
 
         for(int i = 0; i < 4; i++){
@@ -52,7 +63,9 @@ void consumidor (void *arg)
         }
         buffer[4] = -1;
 
-        sem_up(&s_buffer);
+        mutex_unlock(&m_buffer);
+        //sem_up(&s_buffer);
+
         sem_up(&s_vaga);
         printf("%s consumiu %d\n", (char*)arg, item);
         task_sleep(1);
@@ -66,7 +79,7 @@ int main (int argc, char *argv[])
     srand(time(0));
     pingpong_init();
 
-    sem_create(&s_buffer, 1);
+    mutex_create(&m_buffer);
     sem_create(&s_item, 0);
     sem_create(&s_vaga, 5);
 

@@ -28,7 +28,6 @@ void tratador()
 {
     if(CurrentTask){
         CurrentTask->tempoProcessamento++;      //Tempo de processamento da tarefa atual é atualizado
-
         //Caso seja uma tarefa de usuário
         if(CurrentTask->tipoTarefa == USUARIO){
             //Caso o quantum chegue a zero, seu quantum é atualizado para o valor de quantum predefinido, ...
@@ -104,6 +103,8 @@ void dispatcher_body()
 //Inicializa algumas variáveis e desativa o buffer da saída padrão
 void pingpong_init()
 {
+
+
     setvbuf (stdout, 0, _IONBF, 0);         //desativa o buffer da saida padrao (stdout), usado pela função printf
     readyQueue = NULL;
     sleepingQueue = NULL;
@@ -198,17 +199,17 @@ int task_create( task_t *task,
 
 int task_switch (task_t *task)
 {
-    task_t *Aux = CurrentTask;              //O ponteiro 'CurrentTask' aponta para a tarefa recebida
-    CurrentTask = task;
+        task_t *Aux = CurrentTask;              //O ponteiro 'CurrentTask' aponta para a tarefa recebida
+        CurrentTask = task;
 
-    //Código para depuração caso DEBUG esteja definido
-    #ifdef DEBUG
-    printf("task_switch: trocando contexto %d -> %d\n", Aux->tid, task->tid);
-    #endif
+        #ifdef DEBUG
+        printf("task_switch: trocando contexto %d -> %d\n", Aux->tid, task->tid);
+        #endif
 
-    //Salva o contexto da tarefa anterior e aciona o contexto da tarefa recebida
-    if(swapcontext(&Aux->context, &task->context) < 0)
-        return -1;
+        //Salva o contexto da tarefa anterior e aciona o contexto da tarefa recebida
+        if(swapcontext(&Aux->context, &task->context) < 0)
+            return -1;
+
 
     return 0;
 }
@@ -308,7 +309,7 @@ void task_resume (task_t *task)
         task->next = NULL;
         task->prev = NULL;
 
-        queue_append((queue_t**) &readyQueue, (queue_t*) task); //Inseri a tarefa recebida na fila de prontas
+        queue_append((queue_t**) &readyQueue, (queue_t*) task); //Insere a tarefa recebida na fila de prontas
     }
 }
 
@@ -377,27 +378,45 @@ void task_sleep (int t)
 
 int sem_create (semaphore_t *s, int value)
 {
-    //Caso o semáforo 's' exista, receb o valor 'value' e inicia sua fila vazia
+    //Caso o semáforo 's' exista, recebe o valor 'value' e inicia sua fila vazia
     if(s){
         s->value = value;
         s->semQueue = NULL;
+        s->ativado = 1;
+        s->lock = LIBERADA;
         return 0;
     }
     return -1;
 }
 
+int TestAndSet(int *lock)
+{
+    int valor;
+    valor = *lock;
+    *lock = TRAVADA;
+
+    return valor;
+
+}
+
 int sem_down (semaphore_t *s)
 {
     if(s){
+        //trocaContexto = DESABILITADA;
+        while(TestAndSet(&s->lock) == TRAVADA);
+        //s->trocaContexto = DESABILITADA;
+
         s->value--;
         //Caso 'value' seja menor que zero, retira a tarefa atual da lista de prontas e a coloca no final da fila do semáforo recebido...
         //...bloqueando a tarefa imediatamente e devolvendo o contexto para o dispatcher
         if(s->value < 0){
-            //task_t *aux = s->semQueue;
             task_suspend(NULL, &s->semQueue);
-            //s->semQueue = aux;
+            s->lock = LIBERADA;
             task_yield();
+
         }
+        s->lock = LIBERADA;
+
         return 0;
     }
     return -1;
@@ -405,11 +424,16 @@ int sem_down (semaphore_t *s)
 
 int sem_up (semaphore_t *s)
 {
+
     if(s){
+        while(TestAndSet(&s->lock) == TRAVADA);
+
+        //s->trocaContexto = DESABILITADA;
+
         s->value++;
         //Se existir elementos na fila, e 'value' for menor ou igual a zero, acorda o primeiro elemento da fila do semáforo...
         //...e não bloqueia a tarefa atual
-        if(s->value <= 0 && s->semQueue){
+        if(s->value <= 0){
             task_t* aux = s->semQueue;
 
             if(aux->next != aux)
@@ -419,6 +443,8 @@ int sem_up (semaphore_t *s)
 
             task_resume(aux);
         }
+
+        s->lock = LIBERADA;
         return 0;
     }
     return -1;

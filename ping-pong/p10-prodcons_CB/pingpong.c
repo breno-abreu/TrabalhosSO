@@ -59,17 +59,19 @@ void dispatcher_body()
     while(1){
         //Caso haja elementos na fila de adormecidas e o contador auxiliar bata um segundo
 
-        if(queue_size((queue_t*)sleepingQueue) > 0 && tempoAuxSegundos >= 1000){
+        if(queue_size((queue_t*)sleepingQueue) > 0 && tempoAuxSegundos >= 1){
             task_t *aux = sleepingQueue;
             task_t *auxNext;
             int tamanhoFila = queue_size((queue_t*)sleepingQueue);
+
+            int aux2 = 0;
 
             //Percorre a lista de adormecidas
             for(int i = 0; i < tamanhoFila; i++){
                 auxNext = aux->next;
                 aux->sleepTime--;           //Atualiza o tempo em que a tarefa ficará adormecida
                 //Caso o tempo seja 0, acorda a tarefa, inserindo-a na fila de prontas
-                if(aux->sleepTime <= 0){
+                if(aux->sleepTime <= 0 && aux2 == 0){
                     //Caso o ponteiro aux aponte para o inicio da fila
                     if(aux == sleepingQueue){
                         //Caso haja apenas um elemento na fila, o inicio da fila aponta para nulo
@@ -80,10 +82,11 @@ void dispatcher_body()
                             sleepingQueue = aux->next;
                     }
                     aux->aux = 1;
-                    if(queue_size((queue_t*)readyQueue) == 0){
+
                         task_resume(aux);       //Acorda a tarefa
                         aux->aux = 0;
-                    }
+
+                    aux2 = 1;
 
                 }
                 aux = auxNext;
@@ -93,7 +96,7 @@ void dispatcher_body()
 
 
 
-        if(queue_size((queue_t*)sleepingQueue) > 0){
+        /*if(queue_size((queue_t*)sleepingQueue) > 0){
             task_t *aux = sleepingQueue;
             task_t *auxNext;
             int tamanhoFila = queue_size((queue_t*)sleepingQueue);
@@ -116,10 +119,10 @@ void dispatcher_body()
                 }
                 aux = auxNext;
             }
-        }
+        }*/
 
         //Enquanto há elementos na fila de prontos continua executando as tarefas
-        if(queue_size((queue_t*)readyQueue) > 0 && preempcao == 1){
+        if(queue_size((queue_t*)readyQueue) > 0){
             next = scheduler();                 //next recebe a próxima tarefa a ser executada
             next->ativacoes++;                  //Atualiza a quantidade de ativações da tarefa a ser executada
             if(next)
@@ -402,7 +405,7 @@ void task_sleep (int t)
     //Caso o tempo recebido seja maior que zero, atualiza a variável sleepTime da tarefa atual, retira-a da fila de prontas...
     //...e a coloca na fila de adormecidas.
     if(t > 0){
-        CurrentTask->sleepTime = t;
+        CurrentTask->sleepTime = t * 1000;
         task_suspend(NULL, &sleepingQueue);
     }
     task_yield();
@@ -410,25 +413,44 @@ void task_sleep (int t)
 
 int sem_create (semaphore_t *s, int value)
 {
-    //Caso o semáforo 's' exista, recebe o valor 'value' e inicializa sua fila vazia
+    //Caso o semáforo 's' exista, recebe o valor 'value' e inicia sua fila vazia
     if(s){
         s->value = value;
         s->semQueue = NULL;
+        s->ativado = 1;
+        s->lock = LIBERADA;
         return 0;
     }
     return -1;
 }
 
+int TestAndSet(int *lock)
+{
+    int valor;
+    valor = *lock;
+    *lock = TRAVADA;
+
+    return valor;
+}
+
 int sem_down (semaphore_t *s)
 {
     if(s){
+        //trocaContexto = DESABILITADA;
+        while(TestAndSet(&s->lock) == TRAVADA);
+        //s->trocaContexto = DESABILITADA;
+
         s->value--;
         //Caso 'value' seja menor que zero, retira a tarefa atual da lista de prontas e a coloca no final da fila do semáforo recebido...
         //...bloqueando a tarefa imediatamente e devolvendo o contexto para o dispatcher
         if(s->value < 0){
             task_suspend(NULL, &s->semQueue);
+            s->lock = LIBERADA;
             task_yield();
+
         }
+        s->lock = LIBERADA;
+
         return 0;
     }
     return -1;
@@ -436,7 +458,12 @@ int sem_down (semaphore_t *s)
 
 int sem_up (semaphore_t *s)
 {
+
     if(s){
+        while(TestAndSet(&s->lock) == TRAVADA);
+
+        //s->trocaContexto = DESABILITADA;
+
         s->value++;
         //Se existir elementos na fila, e 'value' for menor ou igual a zero, acorda o primeiro elemento da fila do semáforo...
         //...e não bloqueia a tarefa atual
@@ -450,6 +477,8 @@ int sem_up (semaphore_t *s)
 
             task_resume(aux);
         }
+
+        s->lock = LIBERADA;
         return 0;
     }
     return -1;
@@ -478,7 +507,48 @@ int sem_destroy (semaphore_t *s)
     return 0;
 }
 
+int mutex_create (mutex_t *m)
+{
+    if(m){
+        m->lock = LIBERADA;
+        m->tarefa = NULL;
+        return 0;
+    }
+    return -1;
+}
 
+int mutex_lock (mutex_t *m)
+{
+    if(m){
+        while(TestAndSet(&m->lock) == TRAVADA);
+        //task_suspend(NULL, &m->tarefa);
+        //task_yield();
+        return 0;
+    }
+    return 1;
+}
+
+int mutex_unlock (mutex_t *m)
+{
+    if(m){
+        m->lock = LIBERADA;
+        //task_t* aux = m->tarefa;
+        //task_resume(aux);
+       // m->tarefa = NULL;
+        return 0;
+    }
+    return -1;
+}
+
+int mutex_destroy (mutex_t *m)
+{
+    if(m){
+        //task_resume(m->tarefa);
+        m = NULL;
+        return 0;
+    }
+    return -1;
+}
 
 
 
