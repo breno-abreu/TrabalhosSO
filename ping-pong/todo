@@ -7,7 +7,7 @@ Falta:
 - Verificar a corretude das funções do programa referente ao projeto p10.2;
 	é preciso encontrar uma forma melhor de habilitar/desabilitar as trocas de contexto
 - Mutex
-- Retorno 0, -1
+
 - Revisar os enunciados e o enunciado principal
 - Mensagens de erro
 - Malloc e Free
@@ -25,6 +25,7 @@ REVISAR:
 - Corretude
 - Prontos por prontas
 - Makefile
+- Retorno 0, -1
 
 
 Legenda:
@@ -48,7 +49,7 @@ Projeto		Status
 8		<<
 9		<<
 10		!
-11		#
+11		<<
 12		!
 	
 13		X
